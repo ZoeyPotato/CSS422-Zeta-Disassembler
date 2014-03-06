@@ -17,6 +17,10 @@ STACK   EQU $7000   *Stack location
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
+        MOVE	#2,D0
+        TRAP	#15
+        MOVE.L	(A1),D4
+        
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------        
@@ -259,7 +263,20 @@ THEEND  MOVE.B  #9,D0
         
 CR      EQU     $0D             ASCII code for Carriage Return
 LF      EQU     $0A             ASCII code for Line Feed
-MESSAGE     DC.B    'Starting disassembler...',CR,LF,0
+MESSAGE     DC.B	'-------------------------------------------------------------',CR,LF
+			DC.B	'||               Welcome to ZETA Disassembler              ||',CR,LF
+			DC.B	'-------------------------------------------------------------',CR,LF,CR,LF
+			DC.B	'*************************************************************',CR,LF
+			DC.B	'*                                                           *',CR,LF
+			DC.B	'* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF
+			DC.B	'*                                                           *',CR,LF
+			DC.B	'*************************************************************',CR,LF,CR,LF
+			DC.B    'Starting disassembler...',CR,LF,CR,LF
+			DC.B	'Please type in your starting address request: ',0
+			
+GET_ENDADDR	DC.B	' ',CR,LF
+			DC.B	'Please type in your ending address request: ',0
+			DC.B	' ',CR,LF
 
 FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
 FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
@@ -270,6 +287,7 @@ BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
         
         END     START
         
+
 
 *~Font name~Courier New~
 *~Font size~10~
