@@ -8,9 +8,9 @@
 * does, how to use it, assumptions, etc.
 *-------------------------------------------------------------
 
-START   ORG $1000   *Start program at provided location
-ST_ADDR EQU $7FC0   *Starting address of input test file
-STACK   EQU $7000   *Stack location
+START   	ORG $1000   *Start program at provided location
+ST_ADDR 	EQU $7FC0   *Starting address of input test file
+STACK   	EQU $7000   *Stack location
 
 *-----------------------------------------------------------
 * Start of I/O
@@ -305,7 +305,15 @@ CR      EQU     $0D             ASCII code for Carriage Return
 LF      EQU     $0A             ASCII code for Line Feed
 MESSAGE     DC.B	'-------------------------------------------------------------',CR,LF
 			DC.B	'||               Welcome to ZETA Disassembler              ||',CR,LF
-			DC.B	'-------------------------------------------------------------',CR,LF,CR,LF
+			DC.B	'-------------------------------------------------------------',CR,LF
+			DC.B	'*************************************************************',CR,LF
+			DC.B	'*************************************************************',CR,LF
+			DC.B	'******           ***        ***           ****    ***********',CR,LF
+			DC.B	'************    ****   ************   *******  **  **********',CR,LF
+			DC.B	'**********    ******        *******   ******        *********',CR,LF
+			DC.B	'********    ********   ************   *****   ****   ********',CR,LF
+			DC.B	'******           ***        *******   ****   ******   *******',CR,LF
+			DC.B	'*************************************************************',CR,LF
 			DC.B	'*************************************************************',CR,LF
 			DC.B	'*                                                           *',CR,LF
 			DC.B	'* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF

@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.12.0
-Created On: 3/6/2014 11:11:28 PM
+Created On: 3/7/2014 12:05:22 AM
 
 00000000                             1  *-------------------------------------------------------------
 00000000                             2  * Title      :Team Zeta 68k Disassembler, CSS 422 Winter 2014
@@ -12,9 +12,9 @@ Created On: 3/6/2014 11:11:28 PM
 00000000                             8  * does, how to use it, assumptions, etc.
 00000000                             9  *-------------------------------------------------------------
 00000000                            10  
-00001000                            11  START   ORG $1000   *Start program at provided location
-00001000  =00007FC0                 12  ST_ADDR EQU $7FC0   *Starting address of input test file
-00001000  =00007000                 13  STACK   EQU $7000   *Stack location
+00001000                            11  START       ORG $1000   *Start program at provided location
+00001000  =00007FC0                 12  ST_ADDR     EQU $7FC0   *Starting address of input test file
+00001000  =00007000                 13  STACK       EQU $7000   *Stack location
 00001000                            14  
 00001000                            15  *-----------------------------------------------------------
 00001000                            16  * Start of I/O
@@ -26,17 +26,17 @@ Created On: 3/6/2014 11:11:28 PM
 00001010                            22          
 00001010  303C 0000                 23  loop_1      MOVE    #0,D0       
 00001014  303C 0000                 24              MOVE    #0,D0
-00001018  43F9 00001333             25              LEA     STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
+00001018  43F9 00001529             25              LEA     STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
 0000101E  103C 000E                 26              MOVE.B  #14,D0
 00001022  4E4F                      27              TRAP    #15    
 00001024  303C 0002                 28              MOVE    #2,D0
-00001028  43F9 000013E8             29              LEA     CMD_HLD,A1  *Store the command in a buffer
+00001028  43F9 000015DE             29              LEA     CMD_HLD,A1  *Store the command in a buffer
 0000102E  4E4F                      30              TRAP    #15
 00001030  4EB9 0000104A             31              JSR     CHECK_UPY
 00001036  0C07 0001                 32              CMPI.B  #01,D7
 0000103A  67D4                      33              BEQ     loop_1
 0000103C  303C 0002                 34  NXT_CMD     MOVE    #2,D0
-00001040  43F9 000013E8             35              LEA     CMD_HLD,A1  *Need to change where it can hold the start/end address
+00001040  43F9 000015DE             35              LEA     CMD_HLD,A1  *Need to change where it can hold the start/end address
 00001046  4E4F                      36              TRAP    #15
 00001048  2811                      37              MOVE.L  (A1),D4
 0000104A                            38          
@@ -58,7 +58,7 @@ Created On: 3/6/2014 11:11:28 PM
 00001074  6700 009A                 54              BEQ     DONE
 00001078  4E75                      55              RTS
 0000107A  303C 0000                 56  INVALID     MOVE    #0,D0
-0000107E  43F9 00001461             57              LEA     INV_MSG,A1
+0000107E  43F9 00001657             57              LEA     INV_MSG,A1
 00001084  303C 000E                 58              MOVE    #14,D0
 00001088  4E4F                      59              TRAP    #15
 0000108A  5207                      60              ADDI.B  #1,D7
@@ -121,7 +121,7 @@ Created On: 3/6/2014 11:11:28 PM
 000010B4                           117  *THIS IS STILL PART OF OPCODES RESPONSIBILITY
 000010B4                           118  IS_ADDI
 000010B4                           119          *Output some message, hey we found an ADDI instruction or something...
-000010B4  43F9 00001406            120          LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+000010B4  43F9 000015FC            120          LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
 000010BA  103C 000E                121          MOVE.B  #14,D0      *Moves the number 14 into data register D0
 000010BE  4E4F                     122          TRAP    #15         *Displays Message
 000010C0  4EF8 108E                123          JMP     GRAB_NEXT_OP    *Jump and go to the next instruction
@@ -159,7 +159,7 @@ Created On: 3/6/2014 11:11:28 PM
 000010D0  6700 001E                155          BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
 000010D4                           156          
 000010D4                           157          *Output a message, hey we found a BCHG(dynamic) instruction...
-000010D4  43F9 0000141D            158          LEA     FNDBCHG_D,A1    *Loads FNDBCHG_D into address register A1
+000010D4  43F9 00001613            158          LEA     FNDBCHG_D,A1    *Loads FNDBCHG_D into address register A1
 000010DA  103C 000E                159          MOVE.B  #14,D0          *Moves the number 14 into data register D0
 000010DE  4E4F                     160          TRAP    #15             *Displays Message
 000010E0                           161                  
@@ -280,7 +280,7 @@ Created On: 3/6/2014 11:11:28 PM
 000010F0                           276          *OTHERWISE, THE NEXT OP WILL TRY TO TREAT THAT IMMEDIATE/ABSOULTE DATA AS
 000010F0                           277          *A LEGIT INSTRUCTION, NOT GARBAGE!!!
 000010F0                           278          *i/o and error message code...
-000010F0  43F9 0000144C            279          LEA     BADOPMSG,A1 *Loads BADOPMSG into address register A1        
+000010F0  43F9 00001642            279          LEA     BADOPMSG,A1 *Loads BADOPMSG into address register A1        
 000010F6  103C 000E                280          MOVE.B  #14,D0      *Moves the number 14 into data register D0
 000010FA  4E4F                     281          TRAP    #15         *Displays Message
 000010FC  4EF8 108E                282          JMP     GRAB_NEXT_OP
@@ -291,7 +291,7 @@ Created On: 3/6/2014 11:11:28 PM
 00001100                           287          *next instruction in memory.
 00001100                           288          *NOTE: WE SHOULDN'T HAVE TO WORRY ABOUT GARBAGE IMMEDAIATE/ABSOLUTE DATA
 00001100                           289          *HERE, EACH EA FUNC SHOULD HAVE TAKEN CARE OF THAT BEFORE JUMPIN TO THIS FUNC        
-00001100  43F9 0000143C            290          LEA     BADEAMSG,A1 *Loads BADEAMSG into address register A1        
+00001100  43F9 00001632            290          LEA     BADEAMSG,A1 *Loads BADEAMSG into address register A1        
 00001106  103C 000E                291          MOVE.B  #14,D0      *Moves the number 14 into data register D0
 0000110A  4E4F                     292          TRAP    #15         *Displays Message
 0000110C  4EF8 108E                293          JMP     GRAB_NEXT_OP
@@ -309,36 +309,44 @@ Created On: 3/6/2014 11:11:28 PM
 0000111A  =0000000A                305  LF      EQU     $0A             ASCII code for Line Feed
 0000111A= 2D 2D 2D 2D 2D 2D ...    306  MESSAGE     DC.B    '-------------------------------------------------------------',CR,LF
 00001159= 7C 7C 20 20 20 20 ...    307              DC.B    '||               Welcome to ZETA Disassembler              ||',CR,LF
-00001198= 2D 2D 2D 2D 2D 2D ...    308              DC.B    '-------------------------------------------------------------',CR,LF,CR,LF
-000011D9= 2A 2A 2A 2A 2A 2A ...    309              DC.B    '*************************************************************',CR,LF
-00001218= 2A 20 20 20 20 20 ...    310              DC.B    '*                                                           *',CR,LF
-00001257= 2A 20 41 75 74 68 ...    311              DC.B    '* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF
-00001296= 2A 20 20 20 20 20 ...    312              DC.B    '*                                                           *',CR,LF
-000012D5= 2A 2A 2A 2A 2A 2A ...    313              DC.B    '*************************************************************',CR,LF,CR,LF
-00001316= 53 74 61 72 74 69 ...    314              DC.B    'Starting disassembler...',CR,LF,CR,LF,0
-00001333                           315              
-00001333= 57 6F 75 6C 64 20 ...    316  STARTASSEM  DC.B    'Would you like to start disassembling the test? ',0
-00001364                           317  
-00001364= 20 0D 0A                 318  GETSTRTADDR DC.B    ' ',CR,LF
-00001367= 50 6C 65 61 73 65 ...    319              DC.B    'Please type in your starting address request: ',0
-00001396                           320              
-00001396= 20 0D 0A                 321  GETENDADDR  DC.B    ' ',CR,LF
-00001399= 50 6C 65 61 73 65 ...    322              DC.B    'Please type in your ending address request: ',0
-000013C6                           323              
-000013C6= 20 0D 0A                 324  QUIT_MSG    DC.B    ' ',CR,LF
-000013C9= 57 6F 75 6C 64 20 ...    325              DC.B    'Would you like to quit (Y/N)? ',0
-000013E8                           326  
-000013E8                           327  CMD_HLD     DS.B    30
-00001406                           328          
-00001406= 46 6F 75 6E 64 20 ...    329  FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
-0000141D= 46 6F 75 6E 64 20 ...    330  FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
-0000143C                           331  *for now, i guess every OPCODE will have a corresponding 'found it' msg...
-0000143C                           332  
-0000143C= 42 41 44 20 45 41 ...    333  BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
-0000144C= 42 41 44 20 4F 50 ...    334  BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
-00001461= 49 6D 70 72 6F 70 ...    335  INV_MSG     DC.B    'Improper command.',CR,LF,0
-00001475                           336          
-00001475                           337          END     START
+00001198= 2D 2D 2D 2D 2D 2D ...    308              DC.B    '-------------------------------------------------------------',CR,LF
+000011D7= 2A 2A 2A 2A 2A 2A ...    309              DC.B    '*************************************************************',CR,LF
+00001216= 2A 2A 2A 2A 2A 2A ...    310              DC.B    '*************************************************************',CR,LF
+00001255= 2A 2A 2A 2A 2A 2A ...    311              DC.B    '******           ***        ***           ****    ***********',CR,LF
+00001294= 2A 2A 2A 2A 2A 2A ...    312              DC.B    '************    ****   ************   *******  **  **********',CR,LF
+000012D3= 2A 2A 2A 2A 2A 2A ...    313              DC.B    '**********    ******        *******   ******        *********',CR,LF
+00001312= 2A 2A 2A 2A 2A 2A ...    314              DC.B    '********    ********   ************   *****   ****   ********',CR,LF
+00001351= 2A 2A 2A 2A 2A 2A ...    315              DC.B    '******           ***        *******   ****   ******   *******',CR,LF
+00001390= 2A 2A 2A 2A 2A 2A ...    316              DC.B    '*************************************************************',CR,LF
+000013CF= 2A 2A 2A 2A 2A 2A ...    317              DC.B    '*************************************************************',CR,LF
+0000140E= 2A 20 20 20 20 20 ...    318              DC.B    '*                                                           *',CR,LF
+0000144D= 2A 20 41 75 74 68 ...    319              DC.B    '* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF
+0000148C= 2A 20 20 20 20 20 ...    320              DC.B    '*                                                           *',CR,LF
+000014CB= 2A 2A 2A 2A 2A 2A ...    321              DC.B    '*************************************************************',CR,LF,CR,LF
+0000150C= 53 74 61 72 74 69 ...    322              DC.B    'Starting disassembler...',CR,LF,CR,LF,0
+00001529                           323              
+00001529= 57 6F 75 6C 64 20 ...    324  STARTASSEM  DC.B    'Would you like to start disassembling the test? ',0
+0000155A                           325  
+0000155A= 20 0D 0A                 326  GETSTRTADDR DC.B    ' ',CR,LF
+0000155D= 50 6C 65 61 73 65 ...    327              DC.B    'Please type in your starting address request: ',0
+0000158C                           328              
+0000158C= 20 0D 0A                 329  GETENDADDR  DC.B    ' ',CR,LF
+0000158F= 50 6C 65 61 73 65 ...    330              DC.B    'Please type in your ending address request: ',0
+000015BC                           331              
+000015BC= 20 0D 0A                 332  QUIT_MSG    DC.B    ' ',CR,LF
+000015BF= 57 6F 75 6C 64 20 ...    333              DC.B    'Would you like to quit (Y/N)? ',0
+000015DE                           334  
+000015DE                           335  CMD_HLD     DS.B    30
+000015FC                           336          
+000015FC= 46 6F 75 6E 64 20 ...    337  FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
+00001613= 46 6F 75 6E 64 20 ...    338  FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
+00001632                           339  *for now, i guess every OPCODE will have a corresponding 'found it' msg...
+00001632                           340  
+00001632= 42 41 44 20 45 41 ...    341  BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
+00001642= 42 41 44 20 4F 50 ...    342  BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
+00001657= 49 6D 70 72 6F 70 ...    343  INV_MSG     DC.B    'Improper command.',CR,LF,0
+0000166B                           344          
+0000166B                           345          END     START
 
 No errors detected
 No warnings generated
@@ -348,9 +356,9 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 BADEACODE           1100
-BADEAMSG            143C
+BADEAMSG            1632
 BADOPCODE           10F0
-BADOPMSG            144C
+BADOPMSG            1642
 BUCKET0_BITS        0
 BUCKET1_BITS        1
 BUCKET2_BITS        2
@@ -381,7 +389,7 @@ CHECK_LOWN          106C
 CHECK_LOWY          1054
 CHECK_UPN           105E
 CHECK_UPY           104A
-CMD_HLD             13E8
+CMD_HLD             15DE
 CR                  D
 DONE                1110
 EA_ADDI             10C4
@@ -390,13 +398,13 @@ EA_BCHG_D           10EA
 EA_BCHG_S           10EA
 EA_CMPI             10EA
 EA_EORI             10C4
-FNDADDI             1406
-FNDBCHG_D           141D
-GETENDADDR          1396
-GETSTRTADDR         1364
+FNDADDI             15FC
+FNDBCHG_D           1613
+GETENDADDR          158C
+GETSTRTADDR         155A
 GRAB_NEXT_OP        108E
 INVALID             107A
-INV_MSG             1461
+INV_MSG             1657
 IS_ADDI             10B4
 IS_ANDI             10C4
 IS_BCHG_D           10C4
@@ -407,9 +415,9 @@ LF                  A
 LOOP_1              1010
 MESSAGE             111A
 NXT_CMD             103C
-QUIT_MSG            13C6
+QUIT_MSG            15BC
 STACK               7000
 START               1000
-STARTASSEM          1333
+STARTASSEM          1529
 ST_ADDR             7FC0
 THEEND              1114
