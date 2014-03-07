@@ -20,42 +20,45 @@ STACK   EQU $7000   *Stack location
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
         
-loop_1     	CLR.B	D0
+loop_1     	MOVE	#0,D0		
+			MOVE	#0,D0
 			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
         	MOVE.B	#14,D0
-        	TRAP	#15
+        	TRAP	#15    
         	MOVE	#2,D0
+        	LEA		CMD_HLD,A1	*Store the command in a buffer
         	TRAP	#15
         	JSR		CHECK_UPY
-        	CMP.B	#01,D7
+        	CMPI.B	#01,D7
         	BEQ		loop_1
 NXT_CMD 	MOVE	#2,D0
+			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
         	TRAP	#15
         	MOVE.L	(A1),D4
         
 *-----------------------------------------------------------
 * I/O: Input check for Y, y, N, n, Q, q
 *-----------------------------------------------------------
-CHECK_UPY	CMP.B	#$59,(A1)
+CHECK_UPY	CMPI.B	#$59,(A1)
 			BNE		CHECK_LOWy
 			RTS
-CHECK_LOWy	CMP.B	#$79,(A1)
+CHECK_LOWy	CMPI.B	#$79,(A1)
 			BNE		CHECK_UPN
 			RTS
-CHECK_UPN	CMP.B	#$4E,(A1)
+CHECK_UPN	CMPI.B	#$4E,(A1)
 			BEQ		DONE
 			BNE		CHECK_LOWn
 			RTS
-CHECK_LOWn	CMP.B	#$6E,(A1)
+CHECK_LOWn	CMPI.B	#$6E,(A1)
 			BNE		INVALID
 			BEQ		DONE
 			RTS
-INVALID		LEA		INV_MSG,A1
+INVALID		MOVE	#0,D0
+			LEA		INV_MSG,A1
 			MOVE	#14,D0
 			TRAP	#15
 			ADDI.B	#1,D7
-			RTS
-        
+			BRA		loop_1
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------        
@@ -320,6 +323,8 @@ GETENDADDR	DC.B	' ',CR,LF
 			
 QUIT_MSG	DC.B	' ',CR,LF
 			DC.B	'Would you like to quit (Y/N)? ',0
+
+CMD_HLD		DS.B	30
 		
 FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
 FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
@@ -331,6 +336,7 @@ INV_MSG		DC.B	'Improper command.',CR,LF,0
         
         END     START
         
+
 
 
 
