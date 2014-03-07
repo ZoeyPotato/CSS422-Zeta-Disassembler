@@ -12,14 +12,49 @@ START   ORG $1000   *Start program at provided location
 ST_ADDR EQU $7FC0   *Starting address of input test file
 STACK   EQU $7000   *Stack location
 
-        MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
-        LEA     MESSAGE,A1  *Loads MESSAGE into address register A1
-        MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        TRAP    #15         *Displays Message
+*-----------------------------------------------------------
+* Start of I/O
+*-----------------------------------------------------------
+        	MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
+        	LEA     MESSAGE,A1  *Loads MESSAGE into address register A1
+        	MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        	TRAP    #15         *Displays Message
         
-        MOVE	#2,D0
-        TRAP	#15
-        MOVE.L	(A1),D4
+loop_1     	CLR.B	D0
+			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
+        	MOVE.B	#14,D0
+        	TRAP	#15
+        	MOVE	#2,D0
+        	TRAP	#15
+        	JSR		CHECK_UPY
+        	CMP.B	#01,D7
+        	BEQ		loop_1
+NXT_CMD 	MOVE	#2,D0
+        	TRAP	#15
+        	MOVE.L	(A1),D4
+        
+*-----------------------------------------------------------
+* I/O: Input check for Y, y, N, n, Q, q
+*-----------------------------------------------------------
+CHECK_UPY	CMP.B	#$59,(A1)
+			BNE		CHECK_LOWy
+			RTS
+CHECK_LOWy	CMP.B	#$79,(A1)
+			BNE		CHECK_UPN
+			RTS
+CHECK_UPN	CMP.B	#$4E,(A1)
+			BEQ		DONE
+			BNE		CHECK_LOWn
+			RTS
+CHECK_LOWn	CMP.B	#$6E,(A1)
+			BNE		INVALID
+			BEQ		DONE
+			RTS
+INVALID		LEA		INV_MSG,A1
+			MOVE	#14,D0
+			TRAP	#15
+			ADDI.B	#1,D7
+			RTS
         
 *-----------------------------------------------------------        
 * Start of Disassembler
@@ -257,6 +292,8 @@ BADEACODE
 *-----------------------------------------------------------        
 * End of Disassembler
 *-----------------------------------------------------------    
+
+DONE	STOP	#$2700
   
 THEEND  MOVE.B  #9,D0
         TRAP    #15             Halt Simulator        
@@ -271,22 +308,30 @@ MESSAGE     DC.B	'-------------------------------------------------------------'
 			DC.B	'* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF
 			DC.B	'*                                                           *',CR,LF
 			DC.B	'*************************************************************',CR,LF,CR,LF
-			DC.B    'Starting disassembler...',CR,LF,CR,LF
+			DC.B    'Starting disassembler...',CR,LF,CR,LF,0
+			
+STARTASSEM	DC.B	'Would you like to start disassembling the test? ',0
+
+GETSTRTADDR DC.B	' ',CR,LF
 			DC.B	'Please type in your starting address request: ',0
 			
-GET_ENDADDR	DC.B	' ',CR,LF
+GETENDADDR	DC.B	' ',CR,LF
 			DC.B	'Please type in your ending address request: ',0
-			DC.B	' ',CR,LF
-
+			
+QUIT_MSG	DC.B	' ',CR,LF
+			DC.B	'Would you like to quit (Y/N)? ',0
+		
 FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
 FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
 *for now, i guess every OPCODE will have a corresponding 'found it' msg...
 
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
 BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
+INV_MSG		DC.B	'Improper command.',CR,LF,0
         
         END     START
         
+
 
 
 *~Font name~Courier New~
