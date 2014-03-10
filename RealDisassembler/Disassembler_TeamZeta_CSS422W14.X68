@@ -16,53 +16,55 @@ STACK   	EQU $7000   *Stack location
 * Start of I/O
 *-----------------------------------------------------------
         	MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
+        	
         	LEA     MESSAGE,A1  *Loads MESSAGE into address register A1
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
         
-loop_1     	MOVE	#0,D0		
-			MOVE	#0,D0
-			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
-        	MOVE.B	#14,D0
-        	TRAP	#15    
-        	MOVE	#2,D0
-        	LEA		CMD_HLD,A1	*Store the command in a buffer
-        	TRAP	#15
-        	JSR		CHECK_UPY
-        	CMPI.B	#01,D7
-        	BEQ		loop_1
-NXT_CMD 	MOVE	#2,D0
-			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
-        	TRAP	#15
-        	MOVE.L	(A1),D4
+*loop_1     	MOVE	#0,D0		
+*			MOVE	#0,D0
+*			LEA		STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
+*        	MOVE.B	#14,D0
+*        	TRAP	#15    
+*        	MOVE	#2,D0
+*        	LEA		CMD_HLD,A1	*Store the command in a buffer
+*        	TRAP	#15
+*        	JSR		CHECK_UPY
+*        	CMPI.B	#01,D7
+*        	BEQ		loop_1
+*        	
+*NXT_CMD 	MOVE	#2,D0
+*			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
+*        	TRAP	#15
+*        	MOVE.L	(A1),D4
         
 *-----------------------------------------------------------
 * I/O: Input check for Y, y, N, n, Q, q
 *-----------------------------------------------------------
-CHECK_UPY	CMPI.B	#$59,(A1)
-			BNE		CHECK_LOWy
-			RTS
-CHECK_LOWy	CMPI.B	#$79,(A1)
-			BNE		CHECK_UPN
-			RTS
-CHECK_UPN	CMPI.B	#$4E,(A1)
-			BEQ		DONE
-			BNE		CHECK_LOWn
-			RTS
-CHECK_LOWn	CMPI.B	#$6E,(A1)
-			BNE		INVALID
-			BEQ		DONE
-			RTS
-INVALID		MOVE	#0,D0
-			LEA		INV_MSG,A1
-			MOVE	#14,D0
-			TRAP	#15
-			ADDI.B	#1,D7
-			BRA		loop_1
+*CHECK_UPY	CMPI.B	#$59,(A1)
+*			BNE		CHECK_LOWy
+*			RTS
+*CHECK_LOWy	CMPI.B	#$79,(A1)
+*			BNE		CHECK_UPN
+*			RTS
+*CHECK_UPN	CMPI.B	#$4E,(A1)
+*			BEQ		DONE
+*			BNE		CHECK_LOWn
+*			RTS
+*CHECK_LOWn	CMPI.B	#$6E,(A1)
+*			BNE		INVALID
+*			BEQ		DONE
+*			RTS
+*INVALID		MOVE	#0,D0
+*			LEA		INV_MSG,A1
+*			MOVE	#14,D0
+*			TRAP	#15
+*			ADDI.B	#1,D7
+*			BRA		loop_1
+			
 *-----------------------------------------------------------        
 * Start of Disassembler
-*-----------------------------------------------------------        
-
+*-----------------------------------------------------------
 GRAB_NEXT_OP
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
         *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
@@ -83,14 +85,16 @@ GRAB_NEXT_OP
         *list of buckets until we find which one this instruction falls into.
 
 
-*STARTS WITH 0000, ADDI | ANDI | EORI-----------------------
-*                  BCHG(dynamic) | BCHG (static) | CMPI-----
+*-----------------------------------------------------------        
+* Bucket 0000:
+* STARTS WITH 0000, ADDI | ANDI | EORI----------------------
+*                   BCHG(dynamic) | BCHG (static) | CMPI----
+*-----------------------------------------------------------
 BUCKET_0000
-BUCKET0_BITS    EQU $0
-
+BUCKET0000_BITS EQU $0
         CLR.L   D1
         *Load the first 4 bits (really a byte) of BUCKET0 into D1
-        MOVE.B  #BUCKET0_BITS,D1  
+        MOVE.B  #BUCKET0000_BITS,D1
         *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0. 
         *If equal, continue decoding. If not, branch to next bucket.
         CMP.B   D0,D1
@@ -102,29 +106,46 @@ BUCKET0_BITS    EQU $0
         BTST.L  #$08,D0
         BNE     IS_BCHG_D  *If the zbit was 0 (the 8th bit is 1), branch to ISBCHG_D
         
-        *TODO:
-        *Check the next four bits in the instruction, branch to different subsets 
-        *depending on what the bits equal
+        *Now we can check bits 11-8 in the instruction and branch to different op-codes
+        *depending on what the bits equal, without ambiguity due to BCHG(dynamic)
+        LSR.W   #$08,D0 *Shift the first 8 bits into LSB position
+        BCLR.L  #$04,D0 *Set first 4 bits to 0, leaving only bits 11-8 of the instruction
+        BCLR.L  #$05,D0
+        BCLR.L  #$06,D0
+        BCLR.L  #$07,D0
+        
         *Perform compares with these 4 bits to see which specific instruction it is.
-        *If we get through all of the if's without finding the specific instruction,
-        *then this instruction is either not in our list of OP CODES to decode, or
-        *is an invalid instruction/syntax.
-        *If invalid, jump to BADOPCODE, where i/o will take care of it.
-        JMP     BADOPCODE  
+        CMP.B   #$06,D0 *Is this an ADDI?
+        BEQ     IS_ADDI
+        CMP.B   #$02,D0 *Is this an ANDI?
+        BEQ     IS_ANDI
+        CMP.B   #$0A,D0 *Is this an EORI?
+        BEQ     IS_EORI
+        CMP.B   #$08,D0 *Is this a BCHG(static)?
+        BEQ     IS_BCHG_S
+        CMP.B   #$0C,D0 *Is this a CMPI?
+        BEQ     IS_CMPI
+        
+        *If we get through all of the compares without finding the specific instruction,
+        *then this instruction is either not in our list of OP CODES to decode, or is an
+        *invalid instruction/syntax.
+        JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
 
 
 *Now we know this instruction is exactly ADDI, lets set everything up for EA.
-*THIS IS STILL PART OF OPCODES RESPONSIBILITY
 IS_ADDI
-        *Output some message, hey we found an ADDI instruction or something...
+        *TODO:Verify bits
+
+        *Output some message, hey we found an ADDI instruction...
         LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
-        JMP     GRAB_NEXT_OP    *Jump and go to the next instruction
         
-        *some code setting up registers/data for EA to disect and verify
-
-*THIS IS AN 'EAFUNC', EA'S RESPONSIBILITY  
+        *Should have a valid IS_ADDI instruction. Set data up for EA.
+        *TODO:
+        MOVE.B  #14,D3
+        JMP     EA_ADDI
+ 
 EA_ADDI
         *some code verifiying the integrity/syntax of the EA bits of the instruction
         *if bad EA, jump to BADEACODE, where i/o will take care of it
@@ -132,23 +153,52 @@ EA_ADDI
         *make sure when you leave an EA func that you also read in and either use
         *or ignore immediate/absoluate data, so that we can we ready to start reading
         *in the next instruction.
+        JMP     THEEND  *For now just end
 
 
 *Now we know this instruction is exactly ANDI, lets set everything up for EA.
 IS_ANDI
+        *TODO:Verify bits
+
+        *Output some message, hey we found an ANDI instruction...
+        LEA     FNDANDI,A1  *Loads FNDANDI into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *Should have a valid IS_ANDI instruction. Set data up for EA.
+        *TODO:
+        MOVE.B  #14,D3
+        JMP     EA_ANDI
+
 EA_ANDI
+        JMP     THEEND  *For now just end
 
 
 *Now we know this instruction is exactly EORI, lets set everything up for EA.
 IS_EORI
+		*TODO:Verify bits
+
+		*Output some message, hey we found an EORI instruction...
+        LEA     FNDEORI,A1  *Loads FNDEORI into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *Should have a valid IS_EORI instruction. Set data up for EA.
+        *TODO:
+        MOVE.B  #14,D3
+        JMP     EA_EORI
+
 EA_EORI
+        JMP     THEEND  *For now just end
 
 
 *Found a possible BCHG(dynamic) instruction. Verify its bit integrity and then set
 * everything up for EA if is a legit instruction. Assuming D0 holds full instruction.
 IS_BCHG_D
+        MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
+        
         *Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
-        *invalid, branch to BADOPCODE    
+        *invalid, branch to BADOPCODE
         BTST.L  #$07,D0
         BNE     BADOPCODE  *If the zbit was 0 (the 7th bit is 1), branch to BADOPCODE
         BTST.L  #$06,D0
@@ -165,91 +215,118 @@ IS_BCHG_D
         JMP     EA_BCHG_D
 
 EA_BCHG_D
+        JMP     THEEND  *For now just end
 
 
 *Now we know this instruction is exactly BCHG(static), lets set everything up for EA.
 IS_BCHG_S
+		*TODO:Verify bits
+
+		*Output some message, hey we found an BCHG_S instruction...
+        LEA     FNDBCHG_S,A1    *Loads FNDBCHG_S into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        *Should have a valid IS_BCHG_S instruction. Set data up for EA.
+        *TODO:
+        MOVE.B  #14,D3
+        JMP     EA_BCHG_S
+
 EA_BCHG_S
+        JMP     THEEND  *For now just end
 
 
 *Now we know this instruction is exactly CMPI, lets set everything up for EA.
 IS_CMPI
+		*TODO:Verify bits
+
+		*Output some message, hey we found an CMPI instruction...
+        LEA     FNDCMPI,A1  *Loads FNDCMPI into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *Should have a valid IS_CMPI instruction. Set data up for EA.
+        *TODO:
+        MOVE.B  #14,D3
+        JMP     EA_CMPI
+
 EA_CMPI
+        JMP     THEEND  *For now just end
 
 
 *STARTS WITH 0001, MOVE.B-----------------------------------
 BUCKET_0001
-BUCKET1_BITS    EQU $1
+BUCKET0001_BITS EQU $1
         
         *some code...
 
 
 *STARTS WITH 0010, MOVE.L-----------------------------------
 BUCKET_0010
-BUCKET2_BITS    EQU $2
+BUCKET0010_BITS EQU $2
 
         *some code...
 
 
 *STARTS WITH 0011, MOVE.W-----------------------------------
 BUCKET_0011
-BUCKET3_BITS    EQU $3
+BUCKET0011_BITS EQU $3
 
         *some code...
 
 
 *STARTS WITH 0100, MOVEM | MULS(L) | LEA | CLR | JSR | RTS--
 BUCKET_0100
-BUCKET4_BITS    EQU $4
+BUCKET0100_BITS EQU $4
 
         *some code...
 
 
 *STARTS WITH 0101, SUBQ-------------------------------------
 BUCKET_0101
-BUCKET5_BITS    EQU $5
+BUCKET0101_BITS EQU $5
 
         *some code...
 
 
 *STARTS WITH 0110, BCC--------------------------------------
 BUCKET_0110
-BUCKET6_BITS    EQU $6
+BUCKET0110_BITS EQU $6
 
         *some code...
 
 
 *STARTS WITH 1000, DIVU-------------------------------------
 BUCKET_1000
-BUCKET8_BITS    EQU $8
+BUCKET1000_BITS EQU $8
 
         *some code...
 
 
 *STARTS WITH 1001, SUBA-------------------------------------
 BUCKET_1001
-BUCKET9_BITS    EQU $9
+BUCKET1001_BITS EQU $9
 
         *some code...
 
 
 *STARTS WITH 1011, EOR | CMP | CMPA-------------------------
 BUCKET_1011
-BUCKETB_BITS    EQU $B
+BUCKET1011_BITS EQU $B
 
         *some code...
 
 
 *STARTS WITH 1100, MULS(W) | AND----------------------------
 BUCKET_1100
-BUCKETC_BITS    EQU $C
+BUCKET1100_BITS EQU $C
 
         *some code...
 
 
 *STARTS WITH 1101, ADD | ADDA-------------------------------
 BUCKET_1101
-BUCKETD_BITS    EQU $D
+BUCKET1101_BITS EQU $D
 
         *some code...
 
@@ -258,7 +335,7 @@ BUCKETD_BITS    EQU $D
 *                  LSL(REGSHIFT) | LSL(MEMSHIFT)------------
 *                  ROL/ROR(REGROTATE) | ROLS/ROR(MEMROTATE)-
 BUCKET_1110
-BUCKETE_BITS    EQU $E     
+BUCKET1110_BITS EQU $E     
 
         *some code...
 
@@ -296,8 +373,8 @@ BADEACODE
 * End of Disassembler
 *-----------------------------------------------------------    
 
-DONE	STOP	#$2700
-  
+DONE	STOP	#$2700  *What does this do? Why was it added?
+
 THEEND  MOVE.B  #9,D0
         TRAP    #15             Halt Simulator        
         
@@ -333,10 +410,14 @@ QUIT_MSG	DC.B	' ',CR,LF
 			DC.B	'Would you like to quit (Y/N)? ',0
 
 CMD_HLD		DS.B	30
-		
-FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
-FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
+
 *for now, i guess every OPCODE will have a corresponding 'found it' msg...
+FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
+FNDANDI     DC.B    'Found an ANDI opcode',CR,LF,0
+FNDEORI     DC.B    'Found an EORI opcode',CR,LF,0
+FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
+FNDBCHG_S   DC.B    'Found a BCHG(static) opcode',CR,LF,0
+FNDCMPI     DC.B    'Found a CMPI opcode',CR,LF,0
 
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
 BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
@@ -344,10 +425,6 @@ INV_MSG		DC.B	'Improper command.',CR,LF,0
         
         END     START
         
-
-
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

@@ -6,17 +6,16 @@
 *-----------------------------------------------------------
 START   ORG $7FC0
 
-        *BUCKET0 TEST INSTRUCTIONS
-        BCHG.L  D0,D1   
+        *BUCKET0000 TEST INSTRUCTIONS
         ADDI.B  #12,D1
-        *ANDI
-        *EORI
-        *BCHG
-        *CMPI     
+        *ANDI    #12,D1
+        *EORI    #12,D1
+        *BCHG.L  D0,D1   *Dynamic
+        *BCHG.L  #12,D1  *Static
+        *CMPI.B  #$12,D1         
         
         END START
         
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
