@@ -7,7 +7,7 @@
 START   ORG $7FC0
 
         *BUCKET0000 TEST INSTRUCTIONS
-        ADDI.B  #12,D1
+        ADDI.B  #$BC,D1
         *ANDI    #12,D1
         *EORI    #12,D1
         *BCHG.L  D0,D1   *Dynamic

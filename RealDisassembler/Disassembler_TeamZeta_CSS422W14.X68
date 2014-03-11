@@ -3,9 +3,8 @@
 * Written by :Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi
 * Date       :3/1/2014
 * Description:
-* This program disassembles a subset of 68k
-* assembly instructions. *visit this later, describe what it 
-* does, how to use it, assumptions, etc.
+* This program disassembles a subset of 68k assembly instructions. 
+* ***visit this later, describe what it does, how to use it, assumptions, etc.
 *-------------------------------------------------------------
 
 START   	ORG $1000   *Start program at provided location
@@ -21,7 +20,7 @@ STACK   	EQU $7000   *Stack location
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
         
-*loop_1     	MOVE	#0,D0		
+*loop_1     MOVE	#0,D0   *WHY THIS INSTRUCTION TWICE?		
 *			MOVE	#0,D0
 *			LEA		STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
 *        	MOVE.B	#14,D0
@@ -69,12 +68,13 @@ GRAB_NEXT_OP
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
         *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
         *data that may be associated with the instruction.
-        CLR.L   D0
         *Post increment addr, A0 will point to the start of next instruction or will 
         *point to the start of any immed/abso data with this current instruction
+        CLR.L   D0
         MOVE.W  (A0)+,D0
         *Copy the word data we just moved into D0 into D7. We are copying this data
         *So we always have a copy of the WHOLE instruction somewhere
+        CLR.L   D7
         MOVE.W  D0,D7
         *Now shift D0 to the right by 12 bit values, so that we can isolate the first
         *four bits of the instruction. Once we have just the first four bits, we can
@@ -134,18 +134,46 @@ BUCKET0000_BITS EQU $0
 
 *Now we know this instruction is exactly ADDI, lets set everything up for EA.
 IS_ADDI
-        *TODO:Verify bits
+        *Don't need to verify anymore bits for this particular op code (all important
+        *opcode bits were 'verified' by getting here...)
 
         *Output some message, hey we found an ADDI instruction...
         LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_ADDI instruction. Set data up for EA.
-        *TODO:
-        MOVE.B  #14,D3
+        *Should have a valid IS_ADDI op code. Set data up for EA.
+               
+        *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        MOVE.W  D7,D0   *Move the WHOLE instruction to D0
+        LSR.W   #$06,D0 *Shift the first 10 bits into LSB position
+        BCLR.L  #$08,D0 *Set first 8 bits to 0, leaving only bits 7-6 of the instruction
+        BCLR.L  #$09,D0 *This should be a func (jsr) since a lot of instructions will do this...
+        BCLR.L  #$0A,D0 *SEE BFCLR
+        BCLR.L  #$0B,D0        
+        BCLR.L  #$0C,D0        
+        BCLR.L  #$0D,D0        
+        BCLR.L  #$0E,D0        
+        BCLR.L  #$0F,D0
+        
+        *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction        
+        MOVE.W  D7,D1   *Move the WHOLE instruction to D1
+        *Okay! So I thought of something weird to do... I am going to shift the instruction
+        *to the LEFT by 10 bits, putting bits 5-0 of the original instruction into MSB position.
+        LSL.W   #$08,D1
+        LSL.W   #$02,D1
+        *Now! I am going to shift the register to the RIGHT by 13 bits, leaving only bits 5-3
+        *in LSB position, and the rest of the bits will be zero in the register.
+        LSR.W   #$08,D1
+        LSR.W   #$05,D1
+        *Now is this a better way than just shifting once and clearing like I did above with 'size'?
+        
+        *Set D2 to the EA register of the operation located in bits 2-0 of the instruction
+        MOVE.W  D7,D2   *Move the WHOLE instruction to D2
+        *TODO, REMEMBER LOOK INTO BFCLR
+        
         JMP     EA_ADDI
- 
+
 EA_ADDI
         *some code verifiying the integrity/syntax of the EA bits of the instruction
         *if bad EA, jump to BADEACODE, where i/o will take care of it
@@ -165,7 +193,7 @@ IS_ANDI
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_ANDI instruction. Set data up for EA.
+        *Should have a valid IS_ANDI op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_ANDI
@@ -183,7 +211,7 @@ IS_EORI
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_EORI instruction. Set data up for EA.
+        *Should have a valid IS_EORI op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_EORI
@@ -209,7 +237,7 @@ IS_BCHG_D
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message
                 
-        *Should have a valid BCHG(dynamic) instruction. Set data up for EA.
+        *Should have a valid BCHG(dynamic) op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_BCHG_D
@@ -227,7 +255,7 @@ IS_BCHG_S
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message
         
-        *Should have a valid IS_BCHG_S instruction. Set data up for EA.
+        *Should have a valid IS_BCHG_S op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_BCHG_S
@@ -245,7 +273,7 @@ IS_CMPI
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_CMPI instruction. Set data up for EA.
+        *Should have a valid IS_CMPI op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_CMPI
@@ -425,6 +453,7 @@ INV_MSG		DC.B	'Improper command.',CR,LF,0
         
         END     START
         
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
