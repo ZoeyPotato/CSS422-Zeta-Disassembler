@@ -1,3 +1,12 @@
+*-------------------------------------------------------------
+* Title      :Team Zeta 68k Disassembler, CSS 422 Winter 2014
+* Written by :Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi
+* Date       :3/1/2014
+* Description:
+* This program disassembles a subset of 68k assembly instructions. 
+* ***visit this later, describe what it does, how to use it, assumptions, etc.
+*-------------------------------------------------------------
+
 START   	ORG $1000   *Start program at provided location
 ST_ADDR 	EQU $7FC0   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
@@ -43,10 +52,10 @@ CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
 			BNE		CHECK_LOWn
 			RTS
 CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
-			BNE		INVALID
+			BNE		INVALID1
 			BEQ		DONE
 			RTS
-INVALID		MOVE	#0,D0		*Prints invalid command msg if not found
+INVALID1	MOVE	#0,D0		*Prints invalid command msg if not found
 			LEA		INV_MSG,A1
 			MOVE	#14,D0
 			TRAP	#15
