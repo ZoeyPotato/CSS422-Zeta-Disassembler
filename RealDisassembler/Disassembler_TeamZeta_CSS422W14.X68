@@ -6,10 +6,11 @@
 * This program disassembles a subset of 68k assembly instructions. 
 * ***visit this later, describe what it does, how to use it, assumptions, etc.
 *-------------------------------------------------------------
-
-START   	ORG $1000   *Start program at provided location
 ST_ADDR 	EQU $7FC0   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
+
+START   	ORG $1000   *Start program at provided location	
+			LEA	stack,SP
 
 *-----------------------------------------------------------
 * Start of I/O
@@ -26,41 +27,38 @@ loop_1     	MOVE	#0,D0
         	TRAP	#15    
         	MOVE	#2,D0
         	LEA		CMD_HLD,A1	*Store the command in a buffer
-        	TRAP	#15
-        	JSR		CHECK_UPY
-        	CMPI.B	#01,D7
-        	BEQ		loop_1
-NXT_CMD 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
-			MOVE.B	#14,D0
-			TRAP	#15
-			MOVE	#2,D0		
-			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
-        	TRAP	#15
-        	MOVE.L	(A1),D4
+           	TRAP	#15
+        	BRA		CHECK_UPY
         
 *-----------------------------------------------------------
 * I/O: Input check for Y, y, N, n
 *-----------------------------------------------------------
 CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
 			BNE		CHECK_LOWy
-			RTS
+			BEQ		NXT_CMD
+			
 CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
 			BNE		CHECK_UPN
-			RTS
+			BEQ		NXT_CMD
+			
 CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
 			BEQ		DONE
 			BNE		CHECK_LOWn
-			RTS
+			
 CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
 			BNE		INVALID1
 			BEQ		DONE
-			RTS
+			
 INVALID1	MOVE	#0,D0		*Prints invalid command msg if not found
 			LEA		INV_MSG,A1
 			MOVE	#14,D0
 			TRAP	#15
-			ADDI.B	#1,D7
-			BRA		loop_1		*Prompts the user again
+			JMP		loop_1
+			
+INV_STRT1	LEA		INVSTRTMSG,A1
+			MOVE.B	#14,D0
+			TRAP	#15
+			JMP		NXT_CMD		
 			
 *-----------------------------------------------------------
 *
@@ -71,7 +69,19 @@ INVALID1	MOVE	#0,D0		*Prints invalid command msg if not found
 * saying that requested address is invalid & prompts the
 * user again for the starting address.
 *-----------------------------------------------------------
-*CHECKSTRT1	MOVE.B	
+NXT_CMD 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
+			MOVE.B	#14,D0
+			TRAP	#15
+			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
+			MOVE	#2,D0			*Get start address
+        	TRAP	#15
+        	MOVE.L	(A1),D4
+        	JSR		CHECKSTRT1
+CHECKSTRT1	CMPI.L	#08,D1		*Check if size 
+			BGT		INV_STRT1
+			CMPI.L	#00,D1
+			BLS		INV_STRT1
+			RTS			
 			
 *-----------------------------------------------------------        
 * Start of Disassembler
@@ -453,6 +463,7 @@ QUIT_MSG	DC.B	' ',CR,LF
 * I/O storages - assuming users knows what to do.
 *****************************************************
 CMD_HLD		DS.B	30
+CMD_SZ		DS.B	30
 STADDR		DS.B	10
 STADDRSZ	DS.B	10
 ENDADDR		DS.B	10
@@ -470,9 +481,11 @@ FNDCMPI     DC.B    'Found a CMPI opcode',CR,LF,0
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
 BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
 INV_MSG		DC.B	'Improper command.',CR,LF,0
+INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
         
         END     START
         
+
 
 
 *~Font name~Courier New~
