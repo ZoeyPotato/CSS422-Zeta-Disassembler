@@ -8,9 +8,11 @@
 *-------------------------------------------------------------
 ST_ADDR 	EQU $7FC0   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
-
 START   	ORG $1000   *Start program at provided location	
 			LEA	stack,SP
+
+
+
 
 *-----------------------------------------------------------
 * Start of I/O
@@ -156,44 +158,32 @@ BUCKET0000_BITS EQU $0
 
 *Now we know this instruction is exactly ADDI, lets set everything up for EA.
 IS_ADDI
-        *Don't need to verify anymore bits for this particular op code (all important
-        *opcode bits were 'verified' by getting here...)
-
+        *Verify the size of this operation. If incorrect size (%11), then bad opcode!
+        *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        MOVE.W  D7,D1   *Move the WHOLE instruction to D1
+        AND.W   #$00C0,D1   *Mask out everything but the size bits
+        LSR.B   #$06,D1 *Shift the size bits into LSB
+        
+        CMP.B   #$03,D1 *Compare the size bits to $3
+        BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
+        
         *Output some message, hey we found an ADDI instruction...
         LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
+        
         *Should have a valid IS_ADDI op code. Set data up for EA.
-               
-        *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
-        MOVE.W  D7,D0   *Move the WHOLE instruction to D0
-        LSR.W   #$06,D0 *Shift the first 10 bits into LSB position
-        BCLR.L  #$08,D0 *Set first 8 bits to 0, leaving only bits 7-6 of the instruction
-        BCLR.L  #$09,D0 *This should be a func (jsr) since a lot of instructions will do this...
-        BCLR.L  #$0A,D0 *SEE BFCLR
-        BCLR.L  #$0B,D0        
-        BCLR.L  #$0C,D0        
-        BCLR.L  #$0D,D0        
-        BCLR.L  #$0E,D0        
-        BCLR.L  #$0F,D0
-        
-        *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction        
-        MOVE.W  D7,D1   *Move the WHOLE instruction to D1
-        *Okay! So I thought of something weird to do... I am going to shift the instruction
-        *to the LEFT by 10 bits, putting bits 5-0 of the original instruction into MSB position.
-        LSL.W   #$08,D1
-        LSL.W   #$02,D1
-        *Now! I am going to shift the register to the RIGHT by 13 bits, leaving only bits 5-3
-        *in LSB position, and the rest of the bits will be zero in the register.
-        LSR.W   #$08,D1
-        LSR.W   #$05,D1
-        *Now is this a better way than just shifting once and clearing like I did above with 'size'?
-        
-        *Set D2 to the EA register of the operation located in bits 2-0 of the instruction
+         
+        *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction
         MOVE.W  D7,D2   *Move the WHOLE instruction to D2
-        *TODO, REMEMBER LOOK INTO BFCLR
-        
+        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2 *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        MOVE.W  D7,D3   *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+            
         JMP     EA_ADDI
 
 EA_ADDI
@@ -488,7 +478,11 @@ INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
 
 
 
+
+
+
+
 *~Font name~Courier New~
-*~Font size~10~
+*~Font size~12~
 *~Tab type~1~
 *~Tab size~4~

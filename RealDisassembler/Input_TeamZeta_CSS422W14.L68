@@ -1,6 +1,6 @@
 00007FC0 Starting Address
-Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/10/2014 4:08:07 PM
+Assembler used: EASy68K Editor/Assembler v5.12.29
+Created On: 3/11/2014 9:31:40 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -11,14 +11,14 @@ Created On: 3/10/2014 4:08:07 PM
 00007FC0                             7  START   ORG $7FC0
 00007FC0                             8  
 00007FC0                             9          *BUCKET0000 TEST INSTRUCTIONS
-00007FC0  0601 00BC                 10          ADDI.B  #$BC,D1
-00007FC4                            11          *ANDI    #12,D1
-00007FC4                            12          *EORI    #12,D1
-00007FC4                            13          *BCHG.L  D0,D1   *Dynamic
-00007FC4                            14          *BCHG.L  #12,D1  *Static
-00007FC4                            15          *CMPI.B  #$12,D1         
-00007FC4                            16          
-00007FC4                            17          END START
+00007FC0  0679 AABC 60000000        10          ADDI.W  #$AABC,$60000000
+00007FC8                            11          *ANDI    #12,D1
+00007FC8                            12          *EORI    #12,D1
+00007FC8                            13          *BCHG.L  D0,D1   *Dynamic
+00007FC8                            14          *BCHG.L  #12,D1  *Static
+00007FC8                            15          *CMPI.B  #$12,D1         
+00007FC8                            16          
+00007FC8                            17          END START
 
 No errors detected
 No warnings generated
