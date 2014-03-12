@@ -1,7 +1,7 @@
 *-------------------------------------------------------------
 * Title      :Team Zeta 68k Disassembler, CSS 422 Winter 2014
 * Written by :Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi
-* Date       :3/1/2014
+* Date       :3/11/2014
 * Description:
 * This program disassembles a subset of 68k assembly instructions. 
 * ***visit this later, describe what it does, how to use it, assumptions, etc.
@@ -12,13 +12,9 @@ START   	ORG $1000   *Start program at provided location
 			LEA	stack,SP
 
 
-
-
 *-----------------------------------------------------------
 * Start of I/O
-*-----------------------------------------------------------
-        	MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
-        	
+*-----------------------------------------------------------        	
         	LEA     MESSAGE,A1  *Loads MESSAGE into address register A1
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
@@ -29,9 +25,9 @@ loop_1     	MOVE	#0,D0
         	TRAP	#15    
         	MOVE	#2,D0
         	LEA		CMD_HLD,A1	*Store the command in a buffer
-           	TRAP	#15
+           	*TRAP	#15
         	BRA		CHECK_UPY
-        
+
 *-----------------------------------------------------------
 * I/O: Input check for Y, y, N, n
 *-----------------------------------------------------------
@@ -55,13 +51,13 @@ INVALID1	MOVE	#0,D0		*Prints invalid command msg if not found
 			LEA		INV_MSG,A1
 			MOVE	#14,D0
 			TRAP	#15
-			JMP		loop_1
+			*JMP		loop_1
 			
 INV_STRT1	LEA		INVSTRTMSG,A1
 			MOVE.B	#14,D0
 			TRAP	#15
 			JMP		NXT_CMD		
-			
+
 *-----------------------------------------------------------
 *
 * I/O: Check Start Address
@@ -76,18 +72,20 @@ NXT_CMD 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
 			TRAP	#15
 			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
 			MOVE	#2,D0			*Get start address
-        	TRAP	#15
+        	*TRAP	#15
         	MOVE.L	(A1),D4
-        	JSR		CHECKSTRT1
+        	*JSR		CHECKSTRT1
 CHECKSTRT1	CMPI.L	#08,D1		*Check if size 
 			BGT		INV_STRT1
 			CMPI.L	#00,D1
-			BLS		INV_STRT1
-			RTS			
-			
+			*BLS		INV_STRT1
+			*RTS			
+
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------
+        MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
+        
 GRAB_NEXT_OP
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
         *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
@@ -160,11 +158,11 @@ BUCKET0000_BITS EQU $0
 IS_ADDI
         *Verify the size of this operation. If incorrect size (%11), then bad opcode!
         *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
-        MOVE.W  D7,D1   *Move the WHOLE instruction to D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
         AND.W   #$00C0,D1   *Mask out everything but the size bits
-        LSR.B   #$06,D1 *Shift the size bits into LSB
+        LSR.B   #$06,D1     *Shift the size bits into LSB
         
-        CMP.B   #$03,D1 *Compare the size bits to $3
+        CMP.B   #$03,D1     *Compare the size bits to $3
         BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
         
         *Output some message, hey we found an ADDI instruction...
@@ -176,18 +174,47 @@ IS_ADDI
         *Should have a valid IS_ADDI op code. Set data up for EA.
          
         *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction
-        MOVE.W  D7,D2   *Move the WHOLE instruction to D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
         AND.W   #$003C,D2   *Mask out everything but the EA mode bits
-        LSR.B   #$03,D2 *Shift the EA mode bits into LSB
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
-        MOVE.W  D7,D3   *Move the WHOLE instruction to D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
         AND.W   #$0007,D3   *Mask out everything but the EA register bits
-            
+        
         JMP     EA_ADDI
 
 EA_ADDI
-        *some code verifiying the integrity/syntax of the EA bits of the instruction
+        *Decode the ea bits of ADDI. Assuming D1 holds the size, D2 holds the EA mode,
+        *and D3 holds the EA register.
+        *Determine how much data to read in, depending on the size of the operation
+        CLR.L   D4
+        CMP.B   #$00,D1     *If the size of operation is byte, get the immediate data
+        BEQ     ByteSizeImmediate
+        
+        CMP.B   #$01,D1     *If the size of operation is word, get the immediate data
+        BEQ     WordSizeImmediate
+
+        CMP.B   #$02,D1     *If the size of operation is long, get the immediate data
+        BEQ     LongSizeImmediate
+        
+        
+*These should prob be funcs we can jsr to, going to do this many times probably
+ByteSizeImmediate
+        *read in the next word, data is contained in last 2 chars of word
+        MOVE.W  (A0)+,D4
+        *do a bit mask to get just the first 4 bits
+        
+        
+WordSizeImmediate
+        *read in next word, data is that word
+        MOVE.W  (A0)+,D4
+        
+LongSizeImmediate
+        *read in next two words, data is those two words
+        MOVE.L  (A0)+,D4
+
+        
         *if bad EA, jump to BADEACODE, where i/o will take care of it
         
         *make sure when you leave an EA func that you also read in and either use
@@ -475,14 +502,7 @@ INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
         
         END     START
         
-
-
-
-
-
-
-
 *~Font name~Courier New~
-*~Font size~12~
+*~Font size~10~
 *~Tab type~1~
 *~Tab size~4~
