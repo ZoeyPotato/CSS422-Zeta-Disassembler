@@ -1,12 +1,3 @@
-*-------------------------------------------------------------
-* Title      :Team Zeta 68k Disassembler, CSS 422 Winter 2014
-* Written by :Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi
-* Date       :3/1/2014
-* Description:
-* This program disassembles a subset of 68k assembly instructions. 
-* ***visit this later, describe what it does, how to use it, assumptions, etc.
-*-------------------------------------------------------------
-
 START   	ORG $1000   *Start program at provided location
 ST_ADDR 	EQU $7FC0   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
@@ -20,46 +11,58 @@ STACK   	EQU $7000   *Stack location
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
         
-*loop_1     MOVE	#0,D0   *WHY THIS INSTRUCTION TWICE?		
-*			MOVE	#0,D0
-*			LEA		STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
-*        	MOVE.B	#14,D0
-*        	TRAP	#15    
-*        	MOVE	#2,D0
-*        	LEA		CMD_HLD,A1	*Store the command in a buffer
-*        	TRAP	#15
-*        	JSR		CHECK_UPY
-*        	CMPI.B	#01,D7
-*        	BEQ		loop_1
-*        	
-*NXT_CMD 	MOVE	#2,D0
-*			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
-*        	TRAP	#15
-*        	MOVE.L	(A1),D4
+loop_1     	MOVE	#0,D0		
+			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
+        	MOVE.B	#14,D0
+        	TRAP	#15    
+        	MOVE	#2,D0
+        	LEA		CMD_HLD,A1	*Store the command in a buffer
+        	TRAP	#15
+        	JSR		CHECK_UPY
+        	CMPI.B	#01,D7
+        	BEQ		loop_1
+NXT_CMD 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
+			MOVE.B	#14,D0
+			TRAP	#15
+			MOVE	#2,D0		
+			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
+        	TRAP	#15
+        	MOVE.L	(A1),D4
         
 *-----------------------------------------------------------
-* I/O: Input check for Y, y, N, n, Q, q
+* I/O: Input check for Y, y, N, n
 *-----------------------------------------------------------
-*CHECK_UPY	CMPI.B	#$59,(A1)
-*			BNE		CHECK_LOWy
-*			RTS
-*CHECK_LOWy	CMPI.B	#$79,(A1)
-*			BNE		CHECK_UPN
-*			RTS
-*CHECK_UPN	CMPI.B	#$4E,(A1)
-*			BEQ		DONE
-*			BNE		CHECK_LOWn
-*			RTS
-*CHECK_LOWn	CMPI.B	#$6E,(A1)
-*			BNE		INVALID
-*			BEQ		DONE
-*			RTS
-*INVALID		MOVE	#0,D0
-*			LEA		INV_MSG,A1
-*			MOVE	#14,D0
-*			TRAP	#15
-*			ADDI.B	#1,D7
-*			BRA		loop_1
+CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
+			BNE		CHECK_LOWy
+			RTS
+CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
+			BNE		CHECK_UPN
+			RTS
+CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
+			BEQ		DONE
+			BNE		CHECK_LOWn
+			RTS
+CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
+			BNE		INVALID
+			BEQ		DONE
+			RTS
+INVALID		MOVE	#0,D0		*Prints invalid command msg if not found
+			LEA		INV_MSG,A1
+			MOVE	#14,D0
+			TRAP	#15
+			ADDI.B	#1,D7
+			BRA		loop_1		*Prompts the user again
+			
+*-----------------------------------------------------------
+*
+* I/O: Check Start Address
+*
+* Make sure that start address starts after allocated 
+* memory addresses. Else, it will print out a message 
+* saying that requested address is invalid & prompts the
+* user again for the starting address.
+*-----------------------------------------------------------
+*CHECKSTRT1	MOVE.B	
 			
 *-----------------------------------------------------------        
 * Start of Disassembler
@@ -437,7 +440,15 @@ GETENDADDR	DC.B	' ',CR,LF
 QUIT_MSG	DC.B	' ',CR,LF
 			DC.B	'Would you like to quit (Y/N)? ',0
 
+*****************************************************
+* I/O storages - assuming users knows what to do.
+*****************************************************
 CMD_HLD		DS.B	30
+STADDR		DS.B	10
+STADDRSZ	DS.B	10
+ENDADDR		DS.B	10
+ENDADDRSZ	DS.B	10
+*****************************************************
 
 *for now, i guess every OPCODE will have a corresponding 'found it' msg...
 FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
@@ -453,6 +464,7 @@ INV_MSG		DC.B	'Improper command.',CR,LF,0
         
         END     START
         
+
 
 *~Font name~Courier New~
 *~Font size~10~
