@@ -187,6 +187,7 @@ IS_ADDI
 EA_ADDI
         *Decode the ea bits of ADDI. Assuming D1 holds the size, D2 holds the EA mode,
         *and D3 holds the EA register.
+        
         *Determine how much data to read in, depending on the size of the operation
         CLR.L   D4
         CMP.B   #$00,D1     *If the size of operation is byte, get the immediate data
@@ -197,29 +198,100 @@ EA_ADDI
 
         CMP.B   #$02,D1     *If the size of operation is long, get the immediate data
         BEQ     LongSizeImmediate
-        
-        
+                        
 *These should prob be funcs we can jsr to, going to do this many times probably
 ByteSizeImmediate
-        *read in the next word, data is contained in last 2 chars of word
-        MOVE.W  (A0)+,D4
-        *do a bit mask to get just the first 4 bits
-        
-        
+        MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word        
+        JMP     DetermineEaMode *should be an RTS, but for now just jump around
+                
 WordSizeImmediate
-        *read in next word, data is that word
-        MOVE.W  (A0)+,D4
-        
+        MOVE.W  (A0)+,D4    *read in next word, data is that word
+        JMP     DetermineEaMode *should be an RTS, but for now just jump around
+                
 LongSizeImmediate
-        *read in next two words, data is those two words
-        MOVE.L  (A0)+,D4
+        MOVE.L  (A0)+,D4    *read in next two words, data is those two words
+        JMP     DetermineEaMode *should be an RTS, but for now just jump around
 
         
-        *if bad EA, jump to BADEACODE, where i/o will take care of it
+DetermineEaMode *Won't be needed once we make the 'XSizeImmediate' code blocks into funcs
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
         
-        *make sure when you leave an EA func that you also read in and either use
-        *or ignore immediate/absoluate data, so that we can we ready to start reading
-        *in the next instruction.
+        CMP.B   #$02,D2
+        BEQ     AddrDirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA (JMP to BADEACODE)
+        *Not quite the best way to determine that it ISN'T any of these valid EA modes...
+                
+*These should prob be funcs we can jsr to, going to be doing this for like every EA decoding...
+DataRegMode
+        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
+        *Output some message, EA mode is data register...
+        LEA     FNDDATAREG,A1   *Loads FNDDATAREG into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+                
+AddrDirectMode  *Not used in ADDI, just put here so I don't forget to make a func of it
+        *some code...
+
+AddrIndirectMode
+        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
+        *Output some message, EA mode is Address Indirect...
+        LEA     FNDADDRIND,A1   *Loads FNDADDRIND into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+                        
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrIndirectPostMode
+        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
+        *Output some message, EA mode is Address Indirect Post...
+        LEA     FNDADDRINDPO,A1 *Loads FNDADDRINDPO into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrIndirectPreMode
+        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
+        *Output some message, EA mode is Address Indirect Pre...
+        LEA     FNDADDRINDPR,A1 *Loads FNDADDRINDPR into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrAbsoluteMode
+        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT ABSOLUTE MODE!
+        *Output some message, EA mode is Address Absolute...
+        LEA     FNDADDRIND,A1   *Loads FNDADDRIND into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+
+        *READ IN THE NEXT WORD ADDRESS OR LONG ADDRESS, DEPENDING ON EA REGISTER, ALSO OUTPUT
+
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+ImmediateDataMode   *Not used in ADDI, just put here so I don't forget to make a func of it
+        *some code
+        
+        
         JMP     THEEND  *For now just end
 
 

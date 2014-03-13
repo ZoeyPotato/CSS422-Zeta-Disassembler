@@ -6,8 +6,10 @@
 *-----------------------------------------------------------
 START   ORG $7FC0
 
+        *MOVE.L  #$12345678,A0
+
         *BUCKET0000 TEST INSTRUCTIONS
-        ADDI.W  #$AABC,$60000000
+        ADDI.l  #$AABCAABC,D1
         *ANDI    #12,D1
         *EORI    #12,D1
         *BCHG.L  D0,D1   *Dynamic
@@ -16,6 +18,7 @@ START   ORG $7FC0
         
         END START
         
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
