@@ -84,7 +84,7 @@ CHECKSTRT1	CMPI.L	#08,D1		*Check if size
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------
-        MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
+        MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
         
 GRAB_NEXT_OP
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
@@ -189,67 +189,10 @@ EA_ADDI
         *and D3 holds the EA register.
         
         *Determine how much data to read in, depending on the size of the operation
-        CLR.L   D4
-        CMP.B   #$00,D1     *If the size of operation is byte, get the immediate data
-        BEQ     ByteSizeImmediate
+        *output the size of the operation and the immediate data to console
+        JSR     WrapperSizeImmediate
         
-        CMP.B   #$01,D1     *If the size of operation is word, get the immediate data
-        BEQ     WordSizeImmediate
-
-        CMP.B   #$02,D1     *If the size of operation is long, get the immediate data
-        BEQ     LongSizeImmediate
-                        
-*These NEED TO BE funcs we can jsr to, going to do this many times...
-ByteSizeImmediate
-        MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word   
-        
-        *Output '.B' to console...
-        LEA     ByteSize,A1 *Loads ByteSize into address register A1
-        MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        TRAP    #15         *Displays Message
-        
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-        *Output some message, the immediate data is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
-     
-        JMP     DetermineEaMode *should be an RTS, but for now just jump around
-                
-WordSizeImmediate
-        MOVE.W  (A0)+,D4    *read in next word, data is that word
-        
-        *Output '.W' to console...
-        LEA     WordSize,A1 *Loads WordSize into address register A1
-        MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        TRAP    #15         *Displays Message
-        
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-        *Output some message, the immediate data is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
-        
-        JMP     DetermineEaMode *should be an RTS, but for now just jump around
-                
-LongSizeImmediate
-        MOVE.L  (A0)+,D4    *read in next two words, data is those two words
-        
-        *Output '.L' to console...
-        LEA     LongSize,A1 *Loads LongSize into address register A1
-        MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        TRAP    #15         *Displays Message
-        
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-        *Output some message, the immediate data is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
-        
-        JMP     DetermineEaMode *should be an RTS, but for now just jump around
-
-
-DetermineEaMode *Won't be needed once we make the 'XSizeImmediate' code blocks into funcs
+        *Determine which EA mode and thus Register/Mem Address this instruction used
         CMP.B   #$00,D2
         BEQ     DataRegMode *If EA mode is a data register, output that
         
@@ -457,36 +400,81 @@ BUCKET1110_BITS EQU $E
 *for this disassembler, jump to BADOPCODE and let I/O take care of it
         JMP     BADOPCODE  
         
+
+*-----------------------------------------------------------        
+* EA operation size decoding functionality
+*-----------------------------------------------------------   
+*'Wrapper' func used for all ea decoding. Used to do the nasty branching for diff sizes
+WrapperSizeImmediate
+        CLR.L   D4
+        CMP.B   #$00,D1     *If the size of operation is byte, get immediate data/output
+        BEQ     ByteSizeImmediate
         
+        CMP.B   #$01,D1     *If the size of operation is word, get immediate data/output
+        BEQ     WordSizeImmediate
+
+        CMP.B   #$02,D1     *If the size of operation is long, get immediate data/output
+        BEQ     LongSizeImmediate
+        
+*Used to get back to what we were doing, after dealing with the specific size
+WrapperSizeImmediateEnd
+        RTS
+     
+ByteSizeImmediate
+        MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word
+        
+        *Output '.B' to console...
+        LEA     ByteSize,A1 *Loads ByteSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+        *Output some message, the immediate data is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+        
+        JMP     WrapperSizeImmediateEnd
+                
+WordSizeImmediate
+        MOVE.W  (A0)+,D4    *read in next word, data is that word
+        
+        *Output '.W' to console...
+        LEA     WordSize,A1 *Loads WordSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+        *Output some message, the immediate data is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+        
+        JMP     WrapperSizeImmediateEnd
+                
+LongSizeImmediate
+        MOVE.L  (A0)+,D4    *read in next two words, data is those two words
+        
+        *Output '.L' to console...
+        LEA     LongSize,A1 *Loads LongSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+        *Output some message, the immediate data is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+        
+        JMP     WrapperSizeImmediateEnd
+
+
 *-----------------------------------------------------------        
 * EA Mode/EA Register decoding functionality
 *-----------------------------------------------------------        
-*These WILL be funcs we can jsr to, going to be doing this for like every EA decoding...
 DataRegMode
         *Depending on the EA Register, output a different register number
-        CMP.B   #$00,D3
-        BEQ     DataReg0
-        
-        CMP.B   #$01,D3
-        BEQ     DataReg1
-        
-        CMP.B   #$02,D3
-        BEQ     DataReg2
-        
-        CMP.B   #$03,D3
-        BEQ     DataReg3
-        
-        CMP.B   #$04,D3
-        BEQ     DataReg4
-        
-        CMP.B   #$05,D3
-        BEQ     DataReg5
-        
-        CMP.B   #$06,D3
-        BEQ     DataReg6
-        
-        CMP.B   #$07,D3
-        BEQ     DataReg7
+        JSR     WrapperDataReg
         
         *Nothing else to do here, should maybe go straight to next instruction and not back
         *to the EA_ADDI portion?
@@ -495,30 +483,7 @@ AddrDirectMode
         *some code...
 
 AddrIndirectMode
-        *Depending on the EA Register, output a different register number
-        CMP.B   #$00,D3
-        BEQ     AddrIndReg0
-        
-        CMP.B   #$01,D3
-        BEQ     AddrIndReg1
-        
-        CMP.B   #$02,D3
-        BEQ     AddrIndReg2
-        
-        CMP.B   #$03,D3
-        BEQ     AddrIndReg3
-        
-        CMP.B   #$04,D3
-        BEQ     AddrIndReg4
-        
-        CMP.B   #$05,D3
-        BEQ     AddrIndReg5
-        
-        CMP.B   #$06,D3
-        BEQ     AddrIndReg6
-        
-        CMP.B   #$07,D3
-        BEQ     AddrIndReg7
+        JSR     WrapperAddrIndirect
                         
         *Nothing else to do here, should maybe go straight to next instruction and not back
         *to the EA_ADDI portion?
@@ -549,94 +514,186 @@ ImmediateDataMode
 
 
 *-----------------------------------------------------------        
-* Output for all Data Registers (0-7)
+* Output logic for all Data Registers (0-7)
 *-----------------------------------------------------------     
-*The 'DataRegX' code blocks WILL BE funcs
+*'Wrapper' func used for outputing the correct register. Used to do the nasty branching
+WrapperDataReg
+        CMP.B   #$00,D3
+        BEQ     DataReg0
+        
+        CMP.B   #$01,D3
+        BEQ     DataReg1
+        
+        CMP.B   #$02,D3
+        BEQ     DataReg2
+        
+        CMP.B   #$03,D3
+        BEQ     DataReg3
+        
+        CMP.B   #$04,D3
+        BEQ     DataReg4
+        
+        CMP.B   #$05,D3
+        BEQ     DataReg5
+        
+        CMP.B   #$06,D3
+        BEQ     DataReg6
+        
+        CMP.B   #$07,D3
+        BEQ     DataReg7        
+
+*Used to get back to 'DataRegMode', after dealing with the specific register
+WrapperDataRegEnd
+        RTS
+
 DataReg0
         *Output some message, EA mode is data register 0...
         LEA     OutDataReg0,A1  *Loads DataReg0 into address register A1
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message   
+        
+        JMP     WrapperDataRegEnd
 
 DataReg1
         LEA     OutDataReg1,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperDataRegEnd
 
 DataReg2
         LEA     OutDataReg2,A1
         MOVE.B  #14,D0
         TRAP    #15
 
+        JMP     WrapperDataRegEnd
+    
 DataReg3
         LEA     OutDataReg3,A1
         MOVE.B  #14,D0
         TRAP    #15
 
+        JMP     WrapperDataRegEnd
+        
 DataReg4
         LEA     OutDataReg4,A1
         MOVE.B  #14,D0
         TRAP    #15
 
+        JMP     WrapperDataRegEnd
+               
 DataReg5
         LEA     OutDataReg5,A1
         MOVE.B  #14,D0
         TRAP    #15
 
+        JMP     WrapperDataRegEnd
+        
 DataReg6
         LEA     OutDataReg6,A1 A1
         MOVE.B  #14,D0
         TRAP    #15
 
+        JMP     WrapperDataRegEnd
+        
 DataReg7
         LEA     OutDataReg7,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperDataRegEnd
+
 
 *-----------------------------------------------------------        
-* Output for all Address Indirec Registers (0-7)
+* Output logic for all Address Indirec Registers (0-7)
 *-----------------------------------------------------------     
-*The 'AddrIndRegX' code blocks WILL BE funcs
+*'Wrapper' func used for outputing the correct register. Used to do the nasty branching
+WrapperAddrIndirect
+        *Depending on the EA Register, output a different register number
+        CMP.B   #$00,D3
+        BEQ     AddrIndReg0
+        
+        CMP.B   #$01,D3
+        BEQ     AddrIndReg1
+        
+        CMP.B   #$02,D3
+        BEQ     AddrIndReg2
+        
+        CMP.B   #$03,D3
+        BEQ     AddrIndReg3
+        
+        CMP.B   #$04,D3
+        BEQ     AddrIndReg4
+        
+        CMP.B   #$05,D3
+        BEQ     AddrIndReg5
+        
+        CMP.B   #$06,D3
+        BEQ     AddrIndReg6
+        
+        CMP.B   #$07,D3
+        BEQ     AddrIndReg7
+
+*Used to get back to 'AddrIndirectMode', after dealing with the specific register
+WrapperAddrIndirectEnd
+        RTS        
+
 AddrIndReg0
         *Output some message, EA mode is address indirect 0...
         LEA     OutAddrIndReg0,A1   *Loads AddrIndReg0 into address register A1
         MOVE.B  #14,D0              *Moves the number 14 into data register D0
         TRAP    #15                 *Displays Message        
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg1
         LEA     OutAddrIndReg1,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg2
         LEA     OutAddrIndReg2,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg3
         LEA     OutAddrIndReg3,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg4
         LEA     OutAddrIndReg4,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg5
         LEA     OutAddrIndReg5,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg6
         LEA     OutAddrIndReg6,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 AddrIndReg7
         LEA     OutAddrIndReg7,A1
         MOVE.B  #14,D0
         TRAP    #15
+        
+        JMP     WrapperAddrIndirectEnd
 
 
 *-----------------------------------------------------------        

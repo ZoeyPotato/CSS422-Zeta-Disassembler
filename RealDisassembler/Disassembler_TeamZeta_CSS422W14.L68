@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/13/2014 1:07:29 AM
+Created On: 3/13/2014 2:18:41 AM
 
 00000000                             1  *-------------------------------------------------------------
 00000000                             2  * Title      :Team Zeta 68k Disassembler, CSS 422 Winter 2014
@@ -19,16 +19,16 @@ Created On: 3/13/2014 1:07:29 AM
 00001004                            15  *-----------------------------------------------------------
 00001004                            16  * Start of I/O
 00001004                            17  *-----------------------------------------------------------            
-00001004  43F9 000013CE             18              LEA     MESSAGE,A1  *Loads MESSAGE into address register A1
+00001004  43F9 0000140A             18              LEA     MESSAGE,A1  *Loads MESSAGE into address register A1
 0000100A  103C 000E                 19              MOVE.B  #14,D0      *Moves the number 14 into data register D0
 0000100E  4E4F                      20              TRAP    #15         *Displays Message
 00001010                            21          
 00001010  303C 0000                 22  loop_1      MOVE    #0,D0       
-00001014  43F9 000017DD             23              LEA     STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
+00001014  43F9 00001819             23              LEA     STARTASSEM,A1   *Fix the bug that takes the input but outputs the input back out.
 0000101A  103C 000E                 24              MOVE.B  #14,D0
 0000101E  4E4F                      25              TRAP    #15    
 00001020  303C 0002                 26              MOVE    #2,D0
-00001024  43F9 00001892             27              LEA     CMD_HLD,A1  *Store the command in a buffer
+00001024  43F9 000018CE             27              LEA     CMD_HLD,A1  *Store the command in a buffer
 0000102A                            28              *TRAP   #15
 0000102A  6000 0002                 29              BRA     CHECK_UPY
 0000102E                            30  
@@ -44,20 +44,20 @@ Created On: 3/13/2014 1:07:29 AM
 00001042  6700 003C                 40              BEQ     NXT_CMD
 00001046                            41              
 00001046  0C11 004E                 42  CHECK_UPN   CMPI.B  #$4E,(A1)   *Checks for uppercase N
-0000104A  6700 0378                 43              BEQ     DONE
+0000104A  6700 03B4                 43              BEQ     DONE
 0000104E  6600 0002                 44              BNE     CHECK_LOWn
 00001052                            45              
 00001052  0C11 006E                 46  CHECK_LOWn  CMPI.B  #$6E,(A1)   *Checks for lowercase n
 00001056  6600 0006                 47              BNE     INVALID1
-0000105A  6700 0368                 48              BEQ     DONE
+0000105A  6700 03A4                 48              BEQ     DONE
 0000105E                            49              
 0000105E  303C 0000                 50  INVALID1    MOVE    #0,D0       *Prints invalid command msg if not found
-00001062  43F9 000019C3             51              LEA     INV_MSG,A1
+00001062  43F9 00001A0B             51              LEA     INV_MSG,A1
 00001068  303C 000E                 52              MOVE    #14,D0
 0000106C  4E4F                      53              TRAP    #15
 0000106E                            54              *JMP        loop_1
 0000106E                            55              
-0000106E  43F9 000019D7             56  INV_STRT1   LEA     INVSTRTMSG,A1
+0000106E  43F9 00001A1F             56  INV_STRT1   LEA     INVSTRTMSG,A1
 00001074  103C 000E                 57              MOVE.B  #14,D0
 00001078  4E4F                      58              TRAP    #15
 0000107A  4EF9 00001080             59              JMP     NXT_CMD     
@@ -71,10 +71,10 @@ Created On: 3/13/2014 1:07:29 AM
 00001080                            67  * saying that requested address is invalid & prompts the
 00001080                            68  * user again for the starting address.
 00001080                            69  *-----------------------------------------------------------
-00001080  43F9 0000180E             70  NXT_CMD     LEA     GETSTRTADDR,A1  *Ask start address once everything is OK.
+00001080  43F9 0000184A             70  NXT_CMD     LEA     GETSTRTADDR,A1  *Ask start address once everything is OK.
 00001086  103C 000E                 71              MOVE.B  #14,D0
 0000108A  4E4F                      72              TRAP    #15
-0000108C  43F9 00001892             73              LEA     CMD_HLD,A1  *Need to change where it can hold the start/end address
+0000108C  43F9 000018CE             73              LEA     CMD_HLD,A1  *Need to change where it can hold the start/end address
 00001092  303C 0002                 74              MOVE    #2,D0           *Get start address
 00001096                            75              *TRAP   #15
 00001096  2811                      76              MOVE.L  (A1),D4
@@ -88,683 +88,732 @@ Created On: 3/13/2014 1:07:29 AM
 000010A6                            84  *-----------------------------------------------------------        
 000010A6                            85  * Start of Disassembler
 000010A6                            86  *-----------------------------------------------------------
-000010A6  307C 7FC0                 87          MOVEA.W #ST_ADDR,A0 *Load starting location of test input file into A0
-000010AA                            88          
-000010AA                            89  GRAB_NEXT_OP
-000010AA                            90          *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
-000010AA                            91          *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
-000010AA                            92          *data that may be associated with the instruction.
-000010AA                            93          *Post increment addr, A0 will point to the start of next instruction or will 
-000010AA                            94          *point to the start of any immed/abso data with this current instruction
-000010AA  4280                      95          CLR.L   D0
-000010AC  3018                      96          MOVE.W  (A0)+,D0
-000010AE                            97          *Copy the word data we just moved into D0 into D7. We are copying this data
-000010AE                            98          *So we always have a copy of the WHOLE instruction somewhere
-000010AE  4287                      99          CLR.L   D7
-000010B0  3E00                     100          MOVE.W  D0,D7
-000010B2                           101          *Now shift D0 to the right by 12 bit values, so that we can isolate the first
-000010B2                           102          *four bits of the instruction. Once we have just the first four bits, we can
-000010B2                           103          *begin to see which 'bucket'/category this instruction falls into. 
-000010B2  E048                     104          LSR.W   #$08,D0 *The max we can shift at once is 8 bits...
-000010B4  E848                     105          LSR.W   #$04,D0
-000010B6                           106          *Now try to figure out what OP CODE this is using these 4 bits. Run down the
-000010B6                           107          *list of buckets until we find which one this instruction falls into.
-000010B6                           108  
-000010B6                           109  
-000010B6                           110  *-----------------------------------------------------------        
-000010B6                           111  * Bucket 0000:
-000010B6                           112  * STARTS WITH 0000, ADDI | ANDI | EORI----------------------
-000010B6                           113  *                   BCHG(dynamic) | BCHG (static) | CMPI----
-000010B6                           114  *-----------------------------------------------------------
-000010B6                           115  BUCKET_0000
-000010B6  =00000000                116  BUCKET0000_BITS EQU $0
-000010B6  4281                     117          CLR.L   D1
-000010B8                           118          *Load the first 4 bits (really a byte) of BUCKET0 into D1
-000010B8  123C 0000                119          MOVE.B  #BUCKET0000_BITS,D1
-000010BC                           120          *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0. 
-000010BC                           121          *If equal, continue decoding. If not, branch to next bucket.
-000010BC  B200                     122          CMP.B   D0,D1
-000010BE  6600 019E                123          BNE     BUCKET_0001
-000010C2                           124  
-000010C2                           125          *Test the 8th bit in this instruction, if it is 1, then it is a BCHG(dynamic) 
-000010C2                           126          *The zbit will be 1 if the bit is 0, and 0 if the bit is 1. 
-000010C2  3007                     127          MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
-000010C4  0800 0008                128          BTST.L  #$08,D0
-000010C8  6600 012E                129          BNE     IS_BCHG_D  *If the zbit was 0 (the 8th bit is 1), branch to ISBCHG_D
-000010CC                           130          
-000010CC                           131          *Now we can check bits 11-8 in the instruction and branch to different op-codes
-000010CC                           132          *depending on what the bits equal, without ambiguity due to BCHG(dynamic)
-000010CC  E048                     133          LSR.W   #$08,D0 *Shift the first 8 bits into LSB position
-000010CE  0880 0004                134          BCLR.L  #$04,D0 *Set first 4 bits to 0, leaving only bits 11-8 of the instruction
-000010D2  0880 0005                135          BCLR.L  #$05,D0
-000010D6  0880 0006                136          BCLR.L  #$06,D0
-000010DA  0880 0007                137          BCLR.L  #$07,D0
-000010DE                           138          
-000010DE                           139          *Perform compares with these 4 bits to see which specific instruction it is.
-000010DE  B03C 0006                140          CMP.B   #$06,D0 *Is this an ADDI?
-000010E2  6700 0028                141          BEQ     IS_ADDI
-000010E6  B03C 0002                142          CMP.B   #$02,D0 *Is this an ANDI?
-000010EA  6700 00D4                143          BEQ     IS_ANDI
-000010EE  B03C 000A                144          CMP.B   #$0A,D0 *Is this an EORI?
-000010F2  6700 00E8                145          BEQ     IS_EORI
-000010F6  B03C 0008                146          CMP.B   #$08,D0 *Is this a BCHG(static)?
-000010FA  6700 012A                147          BEQ     IS_BCHG_S
-000010FE  B03C 000C                148          CMP.B   #$0C,D0 *Is this a CMPI?
-00001102  6700 013E                149          BEQ     IS_CMPI
-00001106                           150          
-00001106                           151          *If we get through all of the compares without finding the specific instruction,
-00001106                           152          *then this instruction is either not in our list of OP CODES to decode, or is an
-00001106                           153          *invalid instruction/syntax.
-00001106  4EF9 000013A4            154          JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
-0000110C                           155  
-0000110C                           156  
-0000110C                           157  *Now we know this instruction is exactly ADDI, lets set everything up for EA.
-0000110C                           158  IS_ADDI
-0000110C                           159          *Verify the size of this operation. If incorrect size (%11), then bad opcode!
-0000110C                           160          *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
-0000110C  3207                     161          MOVE.W  D7,D1       *Move the WHOLE instruction to D1
-0000110E  C27C 00C0                162          AND.W   #$00C0,D1   *Mask out everything but the size bits
-00001112  EC09                     163          LSR.B   #$06,D1     *Shift the size bits into LSB
-00001114                           164          
-00001114  B23C 0003                165          CMP.B   #$03,D1     *Compare the size bits to $3
-00001118  6700 028A                166          BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
-0000111C                           167          
-0000111C                           168          *Output 'ADDI' to console...
-0000111C  43F9 000018F6            169          LEA     ADDI,A1  *Loads FNDADDI into address register A1
-00001122  103C 000E                170          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-00001126  4E4F                     171          TRAP    #15         *Displays Message
-00001128                           172          
-00001128                           173          
-00001128                           174          *Should have a valid ADDI op code. Set data up for EA.
-00001128                           175           
-00001128                           176          *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction
-00001128  3407                     177          MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-0000112A  C47C 003C                178          AND.W   #$003C,D2   *Mask out everything but the EA mode bits
-0000112E  E60A                     179          LSR.B   #$03,D2     *Shift the EA mode bits into LSB
-00001130                           180                  
-00001130                           181          *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
-00001130  3607                     182          MOVE.W  D7,D3       *Move the WHOLE instruction to D3
-00001132  C67C 0007                183          AND.W   #$0007,D3   *Mask out everything but the EA register bits
-00001136                           184          
-00001136  4EF9 0000113C            185          JMP     EA_ADDI
-0000113C                           186  
-0000113C                           187  EA_ADDI
-0000113C                           188          *Decode the ea bits of ADDI. Assuming D1 holds the size, D2 holds the EA mode,
-0000113C                           189          *and D3 holds the EA register.
-0000113C                           190          
-0000113C                           191          *Determine how much data to read in, depending on the size of the operation
-0000113C  4284                     192          CLR.L   D4
-0000113E  B23C 0000                193          CMP.B   #$00,D1     *If the size of operation is byte, get the immediate data
-00001142  6700 0012                194          BEQ     ByteSizeImmediate
-00001146                           195          
-00001146  B23C 0001                196          CMP.B   #$01,D1     *If the size of operation is word, get the immediate data
-0000114A  6700 001E                197          BEQ     WordSizeImmediate
-0000114E                           198  
-0000114E  B23C 0002                199          CMP.B   #$02,D1     *If the size of operation is long, get the immediate data
-00001152  6700 002A                200          BEQ     LongSizeImmediate
-00001156                           201                          
-00001156                           202  *These NEED TO BE funcs we can jsr to, going to do this many times...
-00001156                           203  ByteSizeImmediate
-00001156  3818                     204          MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word   
-00001158                           205          
-00001158                           206          *Output '.B' to console...
-00001158  43F9 00001925            207          LEA     ByteSize,A1 *Loads ByteSize into address register A1
-0000115E  103C 000E                208          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-00001162  4E4F                     209          TRAP    #15         *Displays Message
-00001164                           210          
-00001164                           211          *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-00001164                           212          *Output some message, the immediate data is...
-00001164                           213          *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-00001164                           214          *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-00001164                           215          *TRAP    #15         *Displays Message
-00001164                           216       
-00001164  4EF9 00001192            217          JMP     DetermineEaMode *should be an RTS, but for now just jump around
-0000116A                           218                  
-0000116A                           219  WordSizeImmediate
-0000116A  3818                     220          MOVE.W  (A0)+,D4    *read in next word, data is that word
-0000116C                           221          
-0000116C                           222          *Output '.W' to console...
-0000116C  43F9 00001928            223          LEA     WordSize,A1 *Loads WordSize into address register A1
-00001172  103C 000E                224          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-00001176  4E4F                     225          TRAP    #15         *Displays Message
-00001178                           226          
-00001178                           227          *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-00001178                           228          *Output some message, the immediate data is...
-00001178                           229          *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-00001178                           230          *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-00001178                           231          *TRAP    #15         *Displays Message
-00001178                           232          
-00001178  4EF9 00001192            233          JMP     DetermineEaMode *should be an RTS, but for now just jump around
-0000117E                           234                  
-0000117E                           235  LongSizeImmediate
-0000117E  2818                     236          MOVE.L  (A0)+,D4    *read in next two words, data is those two words
-00001180                           237          
-00001180                           238          *Output '.L' to console...
-00001180  43F9 0000192B            239          LEA     LongSize,A1 *Loads LongSize into address register A1
-00001186  103C 000E                240          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-0000118A  4E4F                     241          TRAP    #15         *Displays Message
-0000118C                           242          
-0000118C                           243          *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-0000118C                           244          *Output some message, the immediate data is...
-0000118C                           245          *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-0000118C                           246          *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-0000118C                           247          *TRAP    #15         *Displays Message
-0000118C                           248          
-0000118C  4EF9 00001192            249          JMP     DetermineEaMode *should be an RTS, but for now just jump around
-00001192                           250  
-00001192                           251  
-00001192                           252  DetermineEaMode *Won't be needed once we make the 'XSizeImmediate' code blocks into funcs
-00001192  B43C 0000                253          CMP.B   #$00,D2
-00001196  6700 00CC                254          BEQ     DataRegMode *If EA mode is a data register, output that
-0000119A                           255          
-0000119A  B43C 0002                256          CMP.B   #$02,D2
-0000119E  6700 0104                257          BEQ     AddrDirectMode  *If EA mode is an addr indirect, output that
-000011A2                           258          
-000011A2  B43C 0003                259          CMP.B   #$03,D2
-000011A6  6700 013C                260          BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
-000011AA                           261          
-000011AA  B43C 0004                262          CMP.B   #$04,D2
-000011AE  6700 0134                263          BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
-000011B2                           264          
-000011B2  B43C 0007                265          CMP.B   #$07,D2
-000011B6  6700 012C                266          BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
-000011BA                           267          
-000011BA                           268          *If the ea mode isn't equal to any of these, it is an invalid EA
-000011BA  4EF9 000013B4            269          JMP     BADEACODE                                
-000011C0                           270  
-000011C0                           271  
-000011C0                           272  *Now we know this instruction is exactly ANDI, lets set everything up for EA.
-000011C0                           273  IS_ANDI
-000011C0                           274          *TODO:Verify bits
-000011C0                           275  
-000011C0                           276          *Output 'ANDI' to console...
-000011C0  43F9 000018FB            277          LEA     ANDI,A1  *Loads FNDANDI into address register A1
-000011C6  103C 000E                278          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-000011CA  4E4F                     279          TRAP    #15         *Displays Message
-000011CC                           280          
-000011CC                           281          *Should have a valid ANDI op code. Set data up for EA.
-000011CC                           282          *TODO:
-000011CC  163C 000E                283          MOVE.B  #14,D3
-000011D0  4EF9 000011D6            284          JMP     EA_ANDI
-000011D6                           285  
-000011D6                           286  EA_ANDI
-000011D6  4EF9 000013C8            287          JMP     THEEND  *For now just end
-000011DC                           288  
-000011DC                           289  
-000011DC                           290  *Now we know this instruction is exactly EORI, lets set everything up for EA.
-000011DC                           291  IS_EORI
-000011DC                           292          *TODO:Verify bits
-000011DC                           293  
-000011DC                           294          *Output 'EORI' to console...
-000011DC  43F9 00001900            295          LEA     EORI,A1  *Loads FNDEORI into address register A1
-000011E2  103C 000E                296          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-000011E6  4E4F                     297          TRAP    #15         *Displays Message
-000011E8                           298          
-000011E8                           299          *Should have a valid EORI op code. Set data up for EA.
-000011E8                           300          *TODO:
-000011E8  163C 000E                301          MOVE.B  #14,D3
-000011EC  4EF9 000011F2            302          JMP     EA_EORI
-000011F2                           303  
-000011F2                           304  EA_EORI
-000011F2  4EF9 000013C8            305          JMP     THEEND  *For now just end
-000011F8                           306  
-000011F8                           307  
-000011F8                           308  *Found a possible BCHG(dynamic) instruction. Verify its bit integrity and then set
-000011F8                           309  * everything up for EA if is a legit instruction. Assuming D0 holds full instruction.
-000011F8                           310  IS_BCHG_D
-000011F8  3007                     311          MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
-000011FA                           312          
-000011FA                           313          *Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
-000011FA                           314          *invalid, branch to BADOPCODE
-000011FA  0800 0007                315          BTST.L  #$07,D0
-000011FE  6600 01A4                316          BNE     BADOPCODE  *If the zbit was 0 (the 7th bit is 1), branch to BADOPCODE
-00001202  0800 0006                317          BTST.L  #$06,D0
-00001206  6700 019C                318          BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
-0000120A                           319          
-0000120A                           320          *Output 'BCHG(dynamic)' to console...
-0000120A  43F9 00001905            321          LEA     BCHG_D,A1    *Loads FNDBCHG_D into address register A1
-00001210  103C 000E                322          MOVE.B  #14,D0          *Moves the number 14 into data register D0
-00001214  4E4F                     323          TRAP    #15             *Displays Message
-00001216                           324                  
-00001216                           325          *Should have a valid BCHG(dynamic) op code. Set data up for EA.
-00001216                           326          *TODO:
-00001216  163C 000E                327          MOVE.B  #14,D3
-0000121A  4EF9 00001220            328          JMP     EA_BCHG_D
-00001220                           329  
-00001220                           330  EA_BCHG_D
-00001220  4EF9 000013C8            331          JMP     THEEND  *For now just end
-00001226                           332  
-00001226                           333  
-00001226                           334  *Now we know this instruction is exactly BCHG(static), lets set everything up for EA.
-00001226                           335  IS_BCHG_S
-00001226                           336          *TODO:Verify bits
-00001226                           337  
-00001226                           338          *Output 'BCHG_S' to console...
-00001226  43F9 00001913            339          LEA     BCHG_S,A1    *Loads FNDBCHG_S into address register A1
-0000122C  103C 000E                340          MOVE.B  #14,D0          *Moves the number 14 into data register D0
-00001230  4E4F                     341          TRAP    #15             *Displays Message
-00001232                           342          
-00001232                           343          *Should have a valid BCHG_S op code. Set data up for EA.
-00001232                           344          *TODO:
-00001232  163C 000E                345          MOVE.B  #14,D3
-00001236  4EF9 0000123C            346          JMP     EA_BCHG_S
-0000123C                           347  
-0000123C                           348  EA_BCHG_S
-0000123C  4EF9 000013C8            349          JMP     THEEND  *For now just end
-00001242                           350  
-00001242                           351  
-00001242                           352  *Now we know this instruction is exactly CMPI, lets set everything up for EA.
-00001242                           353  IS_CMPI
-00001242                           354          *TODO:Verify bits
-00001242                           355  
-00001242                           356          *Output 'CMPI' to console...
-00001242  43F9 00001920            357          LEA     CMPI,A1  *Loads FNDCMPI into address register A1
-00001248  103C 000E                358          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-0000124C  4E4F                     359          TRAP    #15         *Displays Message
-0000124E                           360          
-0000124E                           361          *Should have a valid CMPI op code. Set data up for EA.
-0000124E                           362          *TODO:
-0000124E  163C 000E                363          MOVE.B  #14,D3
-00001252  4EF9 00001258            364          JMP     EA_CMPI
-00001258                           365  
-00001258                           366  EA_CMPI
-00001258  4EF9 000013C8            367          JMP     THEEND  *For now just end
-0000125E                           368  
-0000125E                           369  
-0000125E                           370  *STARTS WITH 0001, MOVE.B-----------------------------------
-0000125E                           371  BUCKET_0001
-0000125E  =00000001                372  BUCKET0001_BITS EQU $1
-0000125E                           373          
-0000125E                           374          *some code...
-0000125E                           375  
-0000125E                           376  
-0000125E                           377  *STARTS WITH 0010, MOVE.L-----------------------------------
-0000125E                           378  BUCKET_0010
-0000125E  =00000002                379  BUCKET0010_BITS EQU $2
-0000125E                           380  
-0000125E                           381          *some code...
-0000125E                           382  
-0000125E                           383  
-0000125E                           384  *STARTS WITH 0011, MOVE.W-----------------------------------
-0000125E                           385  BUCKET_0011
-0000125E  =00000003                386  BUCKET0011_BITS EQU $3
-0000125E                           387  
-0000125E                           388          *some code...
-0000125E                           389  
-0000125E                           390  
-0000125E                           391  *STARTS WITH 0100, MOVEM | MULS(L) | LEA | CLR | JSR | RTS--
-0000125E                           392  BUCKET_0100
-0000125E  =00000004                393  BUCKET0100_BITS EQU $4
-0000125E                           394  
-0000125E                           395          *some code...
-0000125E                           396  
-0000125E                           397  
-0000125E                           398  *STARTS WITH 0101, SUBQ-------------------------------------
-0000125E                           399  BUCKET_0101
-0000125E  =00000005                400  BUCKET0101_BITS EQU $5
-0000125E                           401  
-0000125E                           402          *some code...
-0000125E                           403  
-0000125E                           404  
-0000125E                           405  *STARTS WITH 0110, BCC--------------------------------------
-0000125E                           406  BUCKET_0110
-0000125E  =00000006                407  BUCKET0110_BITS EQU $6
-0000125E                           408  
-0000125E                           409          *some code...
-0000125E                           410  
-0000125E                           411  
-0000125E                           412  *STARTS WITH 1000, DIVU-------------------------------------
-0000125E                           413  BUCKET_1000
-0000125E  =00000008                414  BUCKET1000_BITS EQU $8
-0000125E                           415  
-0000125E                           416          *some code...
-0000125E                           417  
-0000125E                           418  
-0000125E                           419  *STARTS WITH 1001, SUBA-------------------------------------
-0000125E                           420  BUCKET_1001
-0000125E  =00000009                421  BUCKET1001_BITS EQU $9
-0000125E                           422  
-0000125E                           423          *some code...
-0000125E                           424  
-0000125E                           425  
-0000125E                           426  *STARTS WITH 1011, EOR | CMP | CMPA-------------------------
-0000125E                           427  BUCKET_1011
-0000125E  =0000000B                428  BUCKET1011_BITS EQU $B
-0000125E                           429  
-0000125E                           430          *some code...
-0000125E                           431  
-0000125E                           432  
-0000125E                           433  *STARTS WITH 1100, MULS(W) | AND----------------------------
-0000125E                           434  BUCKET_1100
-0000125E  =0000000C                435  BUCKET1100_BITS EQU $C
-0000125E                           436  
-0000125E                           437          *some code...
-0000125E                           438  
-0000125E                           439  
-0000125E                           440  *STARTS WITH 1101, ADD | ADDA-------------------------------
-0000125E                           441  BUCKET_1101
-0000125E  =0000000D                442  BUCKET1101_BITS EQU $D
-0000125E                           443  
-0000125E                           444          *some code...
-0000125E                           445  
-0000125E                           446  
-0000125E                           447  *STARTS WITH 1110, ASR(REGSHIFT) | ASR(MEMSHIFT)------------
-0000125E                           448  *                  LSL(REGSHIFT) | LSL(MEMSHIFT)------------
-0000125E                           449  *                  ROL/ROR(REGROTATE) | ROLS/ROR(MEMROTATE)-
-0000125E                           450  BUCKET_1110
-0000125E  =0000000E                451  BUCKET1110_BITS EQU $E     
-0000125E                           452  
-0000125E                           453          *some code...
-0000125E                           454  
-0000125E                           455  
-0000125E                           456  *The given OP CODE doesn't fall into any buckets, this is an invalid opcode
-0000125E                           457  *for this disassembler, jump to BADOPCODE and let I/O take care of it
-0000125E  4EF9 000013A4            458          JMP     BADOPCODE  
-00001264                           459          
-00001264                           460          
-00001264                           461  *-----------------------------------------------------------        
-00001264                           462  * EA Mode/EA Register decoding functionality
-00001264                           463  *-----------------------------------------------------------        
-00001264                           464  *These WILL be funcs we can jsr to, going to be doing this for like every EA decoding...
-00001264                           465  DataRegMode
-00001264                           466          *Depending on the EA Register, output a different register number
-00001264  B63C 0000                467          CMP.B   #$00,D3
-00001268  6700 007A                468          BEQ     DataReg0
-0000126C                           469          
-0000126C  B63C 0001                470          CMP.B   #$01,D3
-00001270  6700 007E                471          BEQ     DataReg1
-00001274                           472          
-00001274  B63C 0002                473          CMP.B   #$02,D3
-00001278  6700 0082                474          BEQ     DataReg2
-0000127C                           475          
-0000127C  B63C 0003                476          CMP.B   #$03,D3
-00001280  6700 0086                477          BEQ     DataReg3
-00001284                           478          
-00001284  B63C 0004                479          CMP.B   #$04,D3
-00001288  6700 008A                480          BEQ     DataReg4
-0000128C                           481          
-0000128C  B63C 0005                482          CMP.B   #$05,D3
-00001290  6700 008E                483          BEQ     DataReg5
-00001294                           484          
-00001294  B63C 0006                485          CMP.B   #$06,D3
-00001298  6700 0092                486          BEQ     DataReg6
-0000129C                           487          
-0000129C  B63C 0007                488          CMP.B   #$07,D3
-000012A0  6700 0096                489          BEQ     DataReg7
-000012A4                           490          
-000012A4                           491          *Nothing else to do here, should maybe go straight to next instruction and not back
-000012A4                           492          *to the EA_ADDI portion?
-000012A4                           493  
-000012A4                           494  AddrDirectMode
-000012A4                           495          *some code...
-000012A4                           496  
-000012A4                           497  AddrIndirectMode
-000012A4                           498          *Depending on the EA Register, output a different register number
-000012A4  B63C 0000                499          CMP.B   #$00,D3
-000012A8  6700 009A                500          BEQ     AddrIndReg0
-000012AC                           501          
-000012AC  B63C 0001                502          CMP.B   #$01,D3
-000012B0  6700 009E                503          BEQ     AddrIndReg1
-000012B4                           504          
-000012B4  B63C 0002                505          CMP.B   #$02,D3
-000012B8  6700 00A2                506          BEQ     AddrIndReg2
-000012BC                           507          
-000012BC  B63C 0003                508          CMP.B   #$03,D3
-000012C0  6700 00A6                509          BEQ     AddrIndReg3
-000012C4                           510          
-000012C4  B63C 0004                511          CMP.B   #$04,D3
-000012C8  6700 00AA                512          BEQ     AddrIndReg4
-000012CC                           513          
-000012CC  B63C 0005                514          CMP.B   #$05,D3
-000012D0  6700 00AE                515          BEQ     AddrIndReg5
-000012D4                           516          
-000012D4  B63C 0006                517          CMP.B   #$06,D3
-000012D8  6700 00B2                518          BEQ     AddrIndReg6
-000012DC                           519          
-000012DC  B63C 0007                520          CMP.B   #$07,D3
-000012E0  6700 00B6                521          BEQ     AddrIndReg7
-000012E4                           522                          
-000012E4                           523          *Nothing else to do here, should maybe go straight to next instruction and not back
-000012E4                           524          *to the EA_ADDI portion?
-000012E4                           525  
-000012E4                           526  AddrIndirectPostMode
-000012E4                           527          *Depending on the EA Register, output a different register number
-000012E4                           528          
-000012E4                           529  
-000012E4                           530          *Nothing else to do here, should maybe go straight to next instruction and not back
-000012E4                           531          *to the EA_ADDI portion?
-000012E4                           532  
-000012E4                           533  AddrIndirectPreMode
-000012E4                           534          *Depending on the EA Register, output a different register number
-000012E4                           535  
-000012E4                           536          *Nothing else to do here, should maybe go straight to next instruction and not back
-000012E4                           537          *to the EA_ADDI portion?
-000012E4                           538  
-000012E4                           539  AddrAbsoluteMode
-000012E4                           540          *Depending on the EA Register, output a different register number
-000012E4                           541  
-000012E4                           542          *READ IN THE NEXT WORD ADDRESS OR LONG ADDRESS, DEPENDING ON EA REGISTER, ALSO OUTPUT
-000012E4                           543  
-000012E4                           544          *Nothing else to do here, should maybe go straight to next instruction and not back
-000012E4                           545          *to the EA_ADDI portion?
-000012E4                           546          
-000012E4                           547  ImmediateDataMode
-000012E4                           548          *some code      
-000012E4                           549  
-000012E4                           550  
-000012E4                           551  *-----------------------------------------------------------        
-000012E4                           552  * Output for all Data Registers (0-7)
-000012E4                           553  *-----------------------------------------------------------     
-000012E4                           554  *The 'DataRegX' code blocks WILL BE funcs
-000012E4                           555  DataReg0
-000012E4                           556          *Output some message, EA mode is data register 0...
-000012E4  43F9 0000192E            557          LEA     OutDataReg0,A1  *Loads DataReg0 into address register A1
-000012EA  103C 000E                558          MOVE.B  #14,D0          *Moves the number 14 into data register D0
-000012EE  4E4F                     559          TRAP    #15             *Displays Message   
-000012F0                           560  
-000012F0                           561  DataReg1
-000012F0  43F9 00001934            562          LEA     OutDataReg1,A1
-000012F6  103C 000E                563          MOVE.B  #14,D0
-000012FA  4E4F                     564          TRAP    #15
-000012FC                           565  
-000012FC                           566  DataReg2
-000012FC  43F9 0000193A            567          LEA     OutDataReg2,A1
-00001302  103C 000E                568          MOVE.B  #14,D0
-00001306  4E4F                     569          TRAP    #15
-00001308                           570  
-00001308                           571  DataReg3
-00001308  43F9 00001940            572          LEA     OutDataReg3,A1
-0000130E  103C 000E                573          MOVE.B  #14,D0
-00001312  4E4F                     574          TRAP    #15
-00001314                           575  
-00001314                           576  DataReg4
-00001314  43F9 00001946            577          LEA     OutDataReg4,A1
-0000131A  103C 000E                578          MOVE.B  #14,D0
-0000131E  4E4F                     579          TRAP    #15
-00001320                           580  
-00001320                           581  DataReg5
-00001320  43F9 0000194C            582          LEA     OutDataReg5,A1
-00001326  103C 000E                583          MOVE.B  #14,D0
-0000132A  4E4F                     584          TRAP    #15
-0000132C                           585  
-0000132C                           586  DataReg6
-0000132C  43F9 00001952            587          LEA     OutDataReg6,A1 A1
-00001332  103C 000E                588          MOVE.B  #14,D0
-00001336  4E4F                     589          TRAP    #15
-00001338                           590  
-00001338                           591  DataReg7
-00001338  43F9 00001958            592          LEA     OutDataReg7,A1
-0000133E  103C 000E                593          MOVE.B  #14,D0
-00001342  4E4F                     594          TRAP    #15
-00001344                           595  
-00001344                           596  *-----------------------------------------------------------        
-00001344                           597  * Output for all Address Indirec Registers (0-7)
-00001344                           598  *-----------------------------------------------------------     
-00001344                           599  *The 'AddrIndRegX' code blocks WILL BE funcs
-00001344                           600  AddrIndReg0
-00001344                           601          *Output some message, EA mode is address indirect 0...
-00001344  43F9 0000195E            602          LEA     OutAddrIndReg0,A1   *Loads AddrIndReg0 into address register A1
-0000134A  103C 000E                603          MOVE.B  #14,D0              *Moves the number 14 into data register D0
-0000134E  4E4F                     604          TRAP    #15                 *Displays Message        
-00001350                           605  
-00001350                           606  AddrIndReg1
-00001350  43F9 00001966            607          LEA     OutAddrIndReg1,A1
-00001356  103C 000E                608          MOVE.B  #14,D0
-0000135A  4E4F                     609          TRAP    #15
-0000135C                           610  
-0000135C                           611  AddrIndReg2
-0000135C  43F9 0000196E            612          LEA     OutAddrIndReg2,A1
-00001362  103C 000E                613          MOVE.B  #14,D0
-00001366  4E4F                     614          TRAP    #15
-00001368                           615  
-00001368                           616  AddrIndReg3
-00001368  43F9 00001976            617          LEA     OutAddrIndReg3,A1
-0000136E  103C 000E                618          MOVE.B  #14,D0
-00001372  4E4F                     619          TRAP    #15
-00001374                           620  
-00001374                           621  AddrIndReg4
-00001374  43F9 0000197E            622          LEA     OutAddrIndReg4,A1
-0000137A  103C 000E                623          MOVE.B  #14,D0
-0000137E  4E4F                     624          TRAP    #15
-00001380                           625  
-00001380                           626  AddrIndReg5
-00001380  43F9 00001986            627          LEA     OutAddrIndReg5,A1
-00001386  103C 000E                628          MOVE.B  #14,D0
-0000138A  4E4F                     629          TRAP    #15
-0000138C                           630  
-0000138C                           631  AddrIndReg6
-0000138C  43F9 0000198E            632          LEA     OutAddrIndReg6,A1
-00001392  103C 000E                633          MOVE.B  #14,D0
-00001396  4E4F                     634          TRAP    #15
-00001398                           635  
-00001398                           636  AddrIndReg7
-00001398  43F9 00001996            637          LEA     OutAddrIndReg7,A1
-0000139E  103C 000E                638          MOVE.B  #14,D0
-000013A2  4E4F                     639          TRAP    #15
-000013A4                           640  
-000013A4                           641  
-000013A4                           642  *-----------------------------------------------------------        
-000013A4                           643  * Current handling of bad op/ea codes. Should be revisited.
-000013A4                           644  *----------------------------------------------------------- 
-000013A4                           645  BADOPCODE
-000013A4                           646          *We found a bad op code, output some error to the screen, jump to the 
-000013A4                           647          *next instruction in memory.
-000013A4                           648          *NOTE: IF THIS INSTRUCTION HAD IMMEDIATE OR ABSOLUTE DATA ATTACHED TO IT,
-000013A4                           649          *THEN WE WILL NEED SOME WAY TO FIGURE THAT OUT AND READ THROUGH THAT DATA.
-000013A4                           650          *OTHERWISE, THE NEXT OP WILL TRY TO TREAT THAT IMMEDIATE/ABSOULTE DATA AS
-000013A4                           651          *A LEGIT INSTRUCTION, NOT GARBAGE!!!
-000013A4                           652          *i/o and error message code...
-000013A4  43F9 000019AE            653          LEA     BADOPMSG,A1 *Loads BADOPMSG into address register A1        
-000013AA  103C 000E                654          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-000013AE  4E4F                     655          TRAP    #15         *Displays Message
-000013B0  4EF8 10AA                656          JMP     GRAB_NEXT_OP
-000013B4                           657                  
-000013B4                           658  BADEACODE
-000013B4                           659          *We found a bad ea code, output some error to the screen, jump to the
-000013B4                           660          *next instruction in memory.
-000013B4                           661          *NOTE: WE SHOULDN'T HAVE TO WORRY ABOUT GARBAGE IMMEDAIATE/ABSOLUTE DATA
-000013B4                           662          *HERE, EACH EA FUNC SHOULD HAVE TAKEN CARE OF THAT BEFORE JUMPIN TO THIS FUNC        
-000013B4  43F9 0000199E            663          LEA     BADEAMSG,A1 *Loads BADEAMSG into address register A1        
-000013BA  103C 000E                664          MOVE.B  #14,D0      *Moves the number 14 into data register D0
-000013BE  4E4F                     665          TRAP    #15         *Displays Message
-000013C0  4EF8 10AA                666          JMP     GRAB_NEXT_OP
-000013C4                           667          
-000013C4                           668          
-000013C4                           669  *-----------------------------------------------------------        
-000013C4                           670  * End of Disassembler
-000013C4                           671  *-----------------------------------------------------------    
-000013C4                           672  
-000013C4  4E72 2700                673  DONE    STOP    #$2700  *What does this do? Why was it added?
-000013C8                           674  
-000013C8  103C 0009                675  THEEND  MOVE.B  #9,D0
-000013CC  4E4F                     676          TRAP    #15             Halt Simulator        
-000013CE                           677          
-000013CE                           678       
-000013CE                           679  *-----------------------------------------------------------        
-000013CE                           680  * Output stuff
-000013CE                           681  *-----------------------------------------------------------     
-000013CE  =0000000D                682  CR      EQU     $0D             ASCII code for Carriage Return
-000013CE  =0000000A                683  LF      EQU     $0A             ASCII code for Line Feed
-000013CE= 2D 2D 2D 2D 2D 2D ...    684  MESSAGE     DC.B    '-------------------------------------------------------------',CR,LF
-0000140D= 7C 7C 20 20 20 20 ...    685              DC.B    '||               Welcome to ZETA Disassembler              ||',CR,LF
-0000144C= 2D 2D 2D 2D 2D 2D ...    686              DC.B    '-------------------------------------------------------------',CR,LF
-0000148B= 2A 2A 2A 2A 2A 2A ...    687              DC.B    '*************************************************************',CR,LF
-000014CA= 2A 2A 2A 2A 2A 2A ...    688              DC.B    '*************************************************************',CR,LF
-00001509= 2A 2A 2A 2A 2A 2A ...    689              DC.B    '******           ***        ***           ****    ***********',CR,LF
-00001548= 2A 2A 2A 2A 2A 2A ...    690              DC.B    '************    ****   ************   *******  **  **********',CR,LF
-00001587= 2A 2A 2A 2A 2A 2A ...    691              DC.B    '**********    ******        *******   ******        *********',CR,LF
-000015C6= 2A 2A 2A 2A 2A 2A ...    692              DC.B    '********    ********   ************   *****   ****   ********',CR,LF
-00001605= 2A 2A 2A 2A 2A 2A ...    693              DC.B    '******           ***        *******   ****   ******   *******',CR,LF
-00001644= 2A 2A 2A 2A 2A 2A ...    694              DC.B    '*************************************************************',CR,LF
-00001683= 2A 2A 2A 2A 2A 2A ...    695              DC.B    '*************************************************************',CR,LF
-000016C2= 2A 20 20 20 20 20 ...    696              DC.B    '*                                                           *',CR,LF
-00001701= 2A 20 41 75 74 68 ...    697              DC.B    '* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF
-00001740= 2A 20 20 20 20 20 ...    698              DC.B    '*                                                           *',CR,LF
-0000177F= 2A 2A 2A 2A 2A 2A ...    699              DC.B    '*************************************************************',CR,LF,CR,LF
-000017C0= 53 74 61 72 74 69 ...    700              DC.B    'Starting disassembler...',CR,LF,CR,LF,0
-000017DD                           701              
-000017DD= 57 6F 75 6C 64 20 ...    702  STARTASSEM  DC.B    'Would you like to start disassembling the test? ',0
-0000180E                           703  
-0000180E= 20 0D 0A                 704  GETSTRTADDR DC.B    ' ',CR,LF
-00001811= 50 6C 65 61 73 65 ...    705              DC.B    'Please type in your starting address request: ',0
-00001840                           706              
-00001840= 20 0D 0A                 707  GETENDADDR  DC.B    ' ',CR,LF
-00001843= 50 6C 65 61 73 65 ...    708              DC.B    'Please type in your ending address request: ',0
-00001870                           709              
-00001870= 20 0D 0A                 710  QUIT_MSG    DC.B    ' ',CR,LF
-00001873= 57 6F 75 6C 64 20 ...    711              DC.B    'Would you like to quit (Y/N)? ',0
-00001892                           712  
-00001892                           713  *****************************************************
-00001892                           714  * I/O storages - assuming users knows what to do.
-00001892                           715  *****************************************************
-00001892                           716  CMD_HLD     DS.B    30
-000018B0                           717  CMD_SZ      DS.B    30
-000018CE                           718  STADDR      DS.B    10
-000018D8                           719  STADDRSZ    DS.B    10
-000018E2                           720  ENDADDR     DS.B    10
-000018EC                           721  ENDADDRSZ   DS.B    10
-000018F6                           722  *****************************************************
-000018F6                           723  
-000018F6                           724  *output for all OPCODEs
-000018F6= 41 44 44 49 00           725  ADDI    DC.B    'ADDI',0
-000018FB= 41 4E 44 49 00           726  ANDI    DC.B    'ANDI',0
-00001900= 45 4F 52 49 00           727  EORI    DC.B    'EORI',0
-00001905= 42 43 48 47 28 64 ...    728  BCHG_D  DC.B    'BCHG(dynamic)',0
-00001913= 42 43 48 47 28 73 ...    729  BCHG_S  DC.B    'BCHG(static)',0
-00001920= 43 4D 50 49 00           730  CMPI    DC.B    'CMPI',0
-00001925                           731  
-00001925                           732  *output for the size of the operation
-00001925= 2E 42 00                 733  ByteSize    DC.B    '.B',0
-00001928= 2E 57 00                 734  WordSize    DC.B    '.W',0
-0000192B= 2E 4C 00                 735  LongSize    DC.B    '.L',0
-0000192E                           736  
-0000192E                           737  *output for all data registers (0-7)
-0000192E= 2C 44 30 0D 0A 00        738  OutDataReg0 DC.B    ',D0',CR,LF,0
-00001934= 2C 44 31 0D 0A 00        739  OutDataReg1 DC.B    ',D1',CR,LF,0
-0000193A= 2C 44 32 0D 0A 00        740  OutDataReg2 DC.B    ',D2',CR,LF,0
-00001940= 2C 44 33 0D 0A 00        741  OutDataReg3 DC.B    ',D3',CR,LF,0
-00001946= 2C 44 34 0D 0A 00        742  OutDataReg4 DC.B    ',D4',CR,LF,0
-0000194C= 2C 44 35 0D 0A 00        743  OutDataReg5 DC.B    ',D5',CR,LF,0
-00001952= 2C 44 36 0D 0A 00        744  OutDataReg6 DC.B    ',D6',CR,LF,0
-00001958= 2C 44 37 0D 0A 00        745  OutDataReg7 DC.B    ',D7',CR,LF,0
-0000195E                           746  
-0000195E                           747  *output for all address indirect registers (0-7)
-0000195E= 2C 28 41 30 29 0D ...    748  OutAddrIndReg0  DC.B    ',(A0)',CR,LF,0
-00001966= 2C 28 41 31 29 0D ...    749  OutAddrIndReg1  DC.B    ',(A1)',CR,LF,0
-0000196E= 2C 28 41 32 29 0D ...    750  OutAddrIndReg2  DC.B    ',(A2)',CR,LF,0
-00001976= 2C 28 41 33 29 0D ...    751  OutAddrIndReg3  DC.B    ',(A3)',CR,LF,0
-0000197E= 2C 28 41 34 29 0D ...    752  OutAddrIndReg4  DC.B    ',(A4)',CR,LF,0
-00001986= 2C 28 41 35 29 0D ...    753  OutAddrIndReg5  DC.B    ',(A5)',CR,LF,0
-0000198E= 2C 28 41 36 29 0D ...    754  OutAddrIndReg6  DC.B    ',(A6)',CR,LF,0
-00001996= 2C 28 41 37 29 0D ...    755  OutAddrIndReg7  DC.B    ',(A7)',CR,LF,0
-0000199E                           756  
-0000199E                           757  *current output for error messages
-0000199E= 42 41 44 20 45 41 ...    758  BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
-000019AE= 42 41 44 20 4F 50 ...    759  BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
-000019C3= 49 6D 70 72 6F 70 ...    760  INV_MSG     DC.B    'Improper command.',CR,LF,0
-000019D7= 49 6E 76 61 6C 69 ...    761  INVSTRTMSG  DC.B    'Invalid start address.',CR,LF,0
-000019F0                           762          
-000019F0                           763          END     START
+000010A6  207C 00007FC0             87          MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
+000010AC                            88          
+000010AC                            89  GRAB_NEXT_OP
+000010AC                            90          *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
+000010AC                            91          *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
+000010AC                            92          *data that may be associated with the instruction.
+000010AC                            93          *Post increment addr, A0 will point to the start of next instruction or will 
+000010AC                            94          *point to the start of any immed/abso data with this current instruction
+000010AC  4280                      95          CLR.L   D0
+000010AE  3018                      96          MOVE.W  (A0)+,D0
+000010B0                            97          *Copy the word data we just moved into D0 into D7. We are copying this data
+000010B0                            98          *So we always have a copy of the WHOLE instruction somewhere
+000010B0  4287                      99          CLR.L   D7
+000010B2  3E00                     100          MOVE.W  D0,D7
+000010B4                           101          *Now shift D0 to the right by 12 bit values, so that we can isolate the first
+000010B4                           102          *four bits of the instruction. Once we have just the first four bits, we can
+000010B4                           103          *begin to see which 'bucket'/category this instruction falls into. 
+000010B4  E048                     104          LSR.W   #$08,D0 *The max we can shift at once is 8 bits...
+000010B6  E848                     105          LSR.W   #$04,D0
+000010B8                           106          *Now try to figure out what OP CODE this is using these 4 bits. Run down the
+000010B8                           107          *list of buckets until we find which one this instruction falls into.
+000010B8                           108  
+000010B8                           109  
+000010B8                           110  *-----------------------------------------------------------        
+000010B8                           111  * Bucket 0000:
+000010B8                           112  * STARTS WITH 0000, ADDI | ANDI | EORI----------------------
+000010B8                           113  *                   BCHG(dynamic) | BCHG (static) | CMPI----
+000010B8                           114  *-----------------------------------------------------------
+000010B8                           115  BUCKET_0000
+000010B8  =00000000                116  BUCKET0000_BITS EQU $0
+000010B8  4281                     117          CLR.L   D1
+000010BA                           118          *Load the first 4 bits (really a byte) of BUCKET0 into D1
+000010BA  123C 0000                119          MOVE.B  #BUCKET0000_BITS,D1
+000010BE                           120          *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0. 
+000010BE                           121          *If equal, continue decoding. If not, branch to next bucket.
+000010BE  B200                     122          CMP.B   D0,D1
+000010C0  6600 014E                123          BNE     BUCKET_0001
+000010C4                           124  
+000010C4                           125          *Test the 8th bit in this instruction, if it is 1, then it is a BCHG(dynamic) 
+000010C4                           126          *The zbit will be 1 if the bit is 0, and 0 if the bit is 1. 
+000010C4  3007                     127          MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
+000010C6  0800 0008                128          BTST.L  #$08,D0
+000010CA  6600 00DE                129          BNE     IS_BCHG_D  *If the zbit was 0 (the 8th bit is 1), branch to ISBCHG_D
+000010CE                           130          
+000010CE                           131          *Now we can check bits 11-8 in the instruction and branch to different op-codes
+000010CE                           132          *depending on what the bits equal, without ambiguity due to BCHG(dynamic)
+000010CE  E048                     133          LSR.W   #$08,D0 *Shift the first 8 bits into LSB position
+000010D0  0880 0004                134          BCLR.L  #$04,D0 *Set first 4 bits to 0, leaving only bits 11-8 of the instruction
+000010D4  0880 0005                135          BCLR.L  #$05,D0
+000010D8  0880 0006                136          BCLR.L  #$06,D0
+000010DC  0880 0007                137          BCLR.L  #$07,D0
+000010E0                           138          
+000010E0                           139          *Perform compares with these 4 bits to see which specific instruction it is.
+000010E0  B03C 0006                140          CMP.B   #$06,D0 *Is this an ADDI?
+000010E4  6700 0028                141          BEQ     IS_ADDI
+000010E8  B03C 0002                142          CMP.B   #$02,D0 *Is this an ANDI?
+000010EC  6700 0084                143          BEQ     IS_ANDI
+000010F0  B03C 000A                144          CMP.B   #$0A,D0 *Is this an EORI?
+000010F4  6700 0098                145          BEQ     IS_EORI
+000010F8  B03C 0008                146          CMP.B   #$08,D0 *Is this a BCHG(static)?
+000010FC  6700 00DA                147          BEQ     IS_BCHG_S
+00001100  B03C 000C                148          CMP.B   #$0C,D0 *Is this a CMPI?
+00001104  6700 00EE                149          BEQ     IS_CMPI
+00001108                           150          
+00001108                           151          *If we get through all of the compares without finding the specific instruction,
+00001108                           152          *then this instruction is either not in our list of OP CODES to decode, or is an
+00001108                           153          *invalid instruction/syntax.
+00001108  4EF9 000013E0            154          JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
+0000110E                           155  
+0000110E                           156  
+0000110E                           157  *Now we know this instruction is exactly ADDI, lets set everything up for EA.
+0000110E                           158  IS_ADDI
+0000110E                           159          *Verify the size of this operation. If incorrect size (%11), then bad opcode!
+0000110E                           160          *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
+0000110E  3207                     161          MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+00001110  C27C 00C0                162          AND.W   #$00C0,D1   *Mask out everything but the size bits
+00001114  EC09                     163          LSR.B   #$06,D1     *Shift the size bits into LSB
+00001116                           164          
+00001116  B23C 0003                165          CMP.B   #$03,D1     *Compare the size bits to $3
+0000111A  6700 02C4                166          BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
+0000111E                           167          
+0000111E                           168          *Output 'ADDI' to console...
+0000111E  43F9 00001932            169          LEA     ADDI,A1  *Loads FNDADDI into address register A1
+00001124  103C 000E                170          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001128  4E4F                     171          TRAP    #15         *Displays Message
+0000112A                           172          
+0000112A                           173          
+0000112A                           174          *Should have a valid ADDI op code. Set data up for EA.
+0000112A                           175           
+0000112A                           176          *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction
+0000112A  3407                     177          MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+0000112C  C47C 003C                178          AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+00001130  E60A                     179          LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+00001132                           180                  
+00001132                           181          *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+00001132  3607                     182          MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+00001134  C67C 0007                183          AND.W   #$0007,D3   *Mask out everything but the EA register bits
+00001138                           184          
+00001138  4EF9 0000113E            185          JMP     EA_ADDI
+0000113E                           186  
+0000113E                           187  EA_ADDI
+0000113E                           188          *Decode the ea bits of ADDI. Assuming D1 holds the size, D2 holds the EA mode,
+0000113E                           189          *and D3 holds the EA register.
+0000113E                           190          
+0000113E                           191          *Determine how much data to read in, depending on the size of the operation
+0000113E                           192          *output the size of the operation and the immediate data to console
+0000113E  4EB9 00001216            193          JSR     WrapperSizeImmediate
+00001144                           194          
+00001144                           195          *Determine which EA mode and thus Register/Mem Address this instruction used
+00001144  B43C 0000                196          CMP.B   #$00,D2
+00001148  6700 011E                197          BEQ     DataRegMode *If EA mode is a data register, output that
+0000114C                           198          
+0000114C  B43C 0002                199          CMP.B   #$02,D2
+00001150  6700 011C                200          BEQ     AddrDirectMode  *If EA mode is an addr indirect, output that
+00001154                           201          
+00001154  B43C 0003                202          CMP.B   #$03,D2
+00001158  6700 0154                203          BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+0000115C                           204          
+0000115C  B43C 0004                205          CMP.B   #$04,D2
+00001160  6700 014C                206          BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+00001164                           207          
+00001164  B43C 0007                208          CMP.B   #$07,D2
+00001168  6700 0144                209          BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+0000116C                           210          
+0000116C                           211          *If the ea mode isn't equal to any of these, it is an invalid EA
+0000116C  4EF9 000013F0            212          JMP     BADEACODE                                
+00001172                           213  
+00001172                           214  
+00001172                           215  *Now we know this instruction is exactly ANDI, lets set everything up for EA.
+00001172                           216  IS_ANDI
+00001172                           217          *TODO:Verify bits
+00001172                           218  
+00001172                           219          *Output 'ANDI' to console...
+00001172  43F9 00001937            220          LEA     ANDI,A1  *Loads FNDANDI into address register A1
+00001178  103C 000E                221          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+0000117C  4E4F                     222          TRAP    #15         *Displays Message
+0000117E                           223          
+0000117E                           224          *Should have a valid ANDI op code. Set data up for EA.
+0000117E                           225          *TODO:
+0000117E  163C 000E                226          MOVE.B  #14,D3
+00001182  4EF9 00001188            227          JMP     EA_ANDI
+00001188                           228  
+00001188                           229  EA_ANDI
+00001188  4EF9 00001404            230          JMP     THEEND  *For now just end
+0000118E                           231  
+0000118E                           232  
+0000118E                           233  *Now we know this instruction is exactly EORI, lets set everything up for EA.
+0000118E                           234  IS_EORI
+0000118E                           235          *TODO:Verify bits
+0000118E                           236  
+0000118E                           237          *Output 'EORI' to console...
+0000118E  43F9 0000193C            238          LEA     EORI,A1  *Loads FNDEORI into address register A1
+00001194  103C 000E                239          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001198  4E4F                     240          TRAP    #15         *Displays Message
+0000119A                           241          
+0000119A                           242          *Should have a valid EORI op code. Set data up for EA.
+0000119A                           243          *TODO:
+0000119A  163C 000E                244          MOVE.B  #14,D3
+0000119E  4EF9 000011A4            245          JMP     EA_EORI
+000011A4                           246  
+000011A4                           247  EA_EORI
+000011A4  4EF9 00001404            248          JMP     THEEND  *For now just end
+000011AA                           249  
+000011AA                           250  
+000011AA                           251  *Found a possible BCHG(dynamic) instruction. Verify its bit integrity and then set
+000011AA                           252  * everything up for EA if is a legit instruction. Assuming D0 holds full instruction.
+000011AA                           253  IS_BCHG_D
+000011AA  3007                     254          MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
+000011AC                           255          
+000011AC                           256          *Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
+000011AC                           257          *invalid, branch to BADOPCODE
+000011AC  0800 0007                258          BTST.L  #$07,D0
+000011B0  6600 022E                259          BNE     BADOPCODE  *If the zbit was 0 (the 7th bit is 1), branch to BADOPCODE
+000011B4  0800 0006                260          BTST.L  #$06,D0
+000011B8  6700 0226                261          BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
+000011BC                           262          
+000011BC                           263          *Output 'BCHG(dynamic)' to console...
+000011BC  43F9 00001941            264          LEA     BCHG_D,A1    *Loads FNDBCHG_D into address register A1
+000011C2  103C 000E                265          MOVE.B  #14,D0          *Moves the number 14 into data register D0
+000011C6  4E4F                     266          TRAP    #15             *Displays Message
+000011C8                           267                  
+000011C8                           268          *Should have a valid BCHG(dynamic) op code. Set data up for EA.
+000011C8                           269          *TODO:
+000011C8  163C 000E                270          MOVE.B  #14,D3
+000011CC  4EF9 000011D2            271          JMP     EA_BCHG_D
+000011D2                           272  
+000011D2                           273  EA_BCHG_D
+000011D2  4EF9 00001404            274          JMP     THEEND  *For now just end
+000011D8                           275  
+000011D8                           276  
+000011D8                           277  *Now we know this instruction is exactly BCHG(static), lets set everything up for EA.
+000011D8                           278  IS_BCHG_S
+000011D8                           279          *TODO:Verify bits
+000011D8                           280  
+000011D8                           281          *Output 'BCHG_S' to console...
+000011D8  43F9 0000194F            282          LEA     BCHG_S,A1    *Loads FNDBCHG_S into address register A1
+000011DE  103C 000E                283          MOVE.B  #14,D0          *Moves the number 14 into data register D0
+000011E2  4E4F                     284          TRAP    #15             *Displays Message
+000011E4                           285          
+000011E4                           286          *Should have a valid BCHG_S op code. Set data up for EA.
+000011E4                           287          *TODO:
+000011E4  163C 000E                288          MOVE.B  #14,D3
+000011E8  4EF9 000011EE            289          JMP     EA_BCHG_S
+000011EE                           290  
+000011EE                           291  EA_BCHG_S
+000011EE  4EF9 00001404            292          JMP     THEEND  *For now just end
+000011F4                           293  
+000011F4                           294  
+000011F4                           295  *Now we know this instruction is exactly CMPI, lets set everything up for EA.
+000011F4                           296  IS_CMPI
+000011F4                           297          *TODO:Verify bits
+000011F4                           298  
+000011F4                           299          *Output 'CMPI' to console...
+000011F4  43F9 0000195C            300          LEA     CMPI,A1  *Loads FNDCMPI into address register A1
+000011FA  103C 000E                301          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+000011FE  4E4F                     302          TRAP    #15         *Displays Message
+00001200                           303          
+00001200                           304          *Should have a valid CMPI op code. Set data up for EA.
+00001200                           305          *TODO:
+00001200  163C 000E                306          MOVE.B  #14,D3
+00001204  4EF9 0000120A            307          JMP     EA_CMPI
+0000120A                           308  
+0000120A                           309  EA_CMPI
+0000120A  4EF9 00001404            310          JMP     THEEND  *For now just end
+00001210                           311  
+00001210                           312  
+00001210                           313  *STARTS WITH 0001, MOVE.B-----------------------------------
+00001210                           314  BUCKET_0001
+00001210  =00000001                315  BUCKET0001_BITS EQU $1
+00001210                           316          
+00001210                           317          *some code...
+00001210                           318  
+00001210                           319  
+00001210                           320  *STARTS WITH 0010, MOVE.L-----------------------------------
+00001210                           321  BUCKET_0010
+00001210  =00000002                322  BUCKET0010_BITS EQU $2
+00001210                           323  
+00001210                           324          *some code...
+00001210                           325  
+00001210                           326  
+00001210                           327  *STARTS WITH 0011, MOVE.W-----------------------------------
+00001210                           328  BUCKET_0011
+00001210  =00000003                329  BUCKET0011_BITS EQU $3
+00001210                           330  
+00001210                           331          *some code...
+00001210                           332  
+00001210                           333  
+00001210                           334  *STARTS WITH 0100, MOVEM | MULS(L) | LEA | CLR | JSR | RTS--
+00001210                           335  BUCKET_0100
+00001210  =00000004                336  BUCKET0100_BITS EQU $4
+00001210                           337  
+00001210                           338          *some code...
+00001210                           339  
+00001210                           340  
+00001210                           341  *STARTS WITH 0101, SUBQ-------------------------------------
+00001210                           342  BUCKET_0101
+00001210  =00000005                343  BUCKET0101_BITS EQU $5
+00001210                           344  
+00001210                           345          *some code...
+00001210                           346  
+00001210                           347  
+00001210                           348  *STARTS WITH 0110, BCC--------------------------------------
+00001210                           349  BUCKET_0110
+00001210  =00000006                350  BUCKET0110_BITS EQU $6
+00001210                           351  
+00001210                           352          *some code...
+00001210                           353  
+00001210                           354  
+00001210                           355  *STARTS WITH 1000, DIVU-------------------------------------
+00001210                           356  BUCKET_1000
+00001210  =00000008                357  BUCKET1000_BITS EQU $8
+00001210                           358  
+00001210                           359          *some code...
+00001210                           360  
+00001210                           361  
+00001210                           362  *STARTS WITH 1001, SUBA-------------------------------------
+00001210                           363  BUCKET_1001
+00001210  =00000009                364  BUCKET1001_BITS EQU $9
+00001210                           365  
+00001210                           366          *some code...
+00001210                           367  
+00001210                           368  
+00001210                           369  *STARTS WITH 1011, EOR | CMP | CMPA-------------------------
+00001210                           370  BUCKET_1011
+00001210  =0000000B                371  BUCKET1011_BITS EQU $B
+00001210                           372  
+00001210                           373          *some code...
+00001210                           374  
+00001210                           375  
+00001210                           376  *STARTS WITH 1100, MULS(W) | AND----------------------------
+00001210                           377  BUCKET_1100
+00001210  =0000000C                378  BUCKET1100_BITS EQU $C
+00001210                           379  
+00001210                           380          *some code...
+00001210                           381  
+00001210                           382  
+00001210                           383  *STARTS WITH 1101, ADD | ADDA-------------------------------
+00001210                           384  BUCKET_1101
+00001210  =0000000D                385  BUCKET1101_BITS EQU $D
+00001210                           386  
+00001210                           387          *some code...
+00001210                           388  
+00001210                           389  
+00001210                           390  *STARTS WITH 1110, ASR(REGSHIFT) | ASR(MEMSHIFT)------------
+00001210                           391  *                  LSL(REGSHIFT) | LSL(MEMSHIFT)------------
+00001210                           392  *                  ROL/ROR(REGROTATE) | ROLS/ROR(MEMROTATE)-
+00001210                           393  BUCKET_1110
+00001210  =0000000E                394  BUCKET1110_BITS EQU $E     
+00001210                           395  
+00001210                           396          *some code...
+00001210                           397  
+00001210                           398  
+00001210                           399  *The given OP CODE doesn't fall into any buckets, this is an invalid opcode
+00001210                           400  *for this disassembler, jump to BADOPCODE and let I/O take care of it
+00001210  4EF9 000013E0            401          JMP     BADOPCODE  
+00001216                           402          
+00001216                           403  
+00001216                           404  *-----------------------------------------------------------        
+00001216                           405  * EA operation size decoding functionality
+00001216                           406  *-----------------------------------------------------------   
+00001216                           407  *'Wrapper' func used for all ea decoding. Used to do the nasty branching for diff sizes
+00001216                           408  WrapperSizeImmediate
+00001216  4284                     409          CLR.L   D4
+00001218  B23C 0000                410          CMP.B   #$00,D1     *If the size of operation is byte, get immediate data/output
+0000121C  6700 0014                411          BEQ     ByteSizeImmediate
+00001220                           412          
+00001220  B23C 0001                413          CMP.B   #$01,D1     *If the size of operation is word, get immediate data/output
+00001224  6700 001E                414          BEQ     WordSizeImmediate
+00001228                           415  
+00001228  B23C 0002                416          CMP.B   #$02,D1     *If the size of operation is long, get immediate data/output
+0000122C  6700 0028                417          BEQ     LongSizeImmediate
+00001230                           418          
+00001230                           419  *Used to get back to what we were doing, after dealing with the specific size
+00001230                           420  WrapperSizeImmediateEnd
+00001230  4E75                     421          RTS
+00001232                           422       
+00001232                           423  ByteSizeImmediate
+00001232  3818                     424          MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word
+00001234                           425          
+00001234                           426          *Output '.B' to console...
+00001234  43F9 00001961            427          LEA     ByteSize,A1 *Loads ByteSize into address register A1
+0000123A  103C 000E                428          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+0000123E  4E4F                     429          TRAP    #15         *Displays Message
+00001240                           430          
+00001240                           431          *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+00001240                           432          *Output some message, the immediate data is...
+00001240                           433          *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+00001240                           434          *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001240                           435          *TRAP    #15         *Displays Message
+00001240                           436          
+00001240  4EF8 1230                437          JMP     WrapperSizeImmediateEnd
+00001244                           438                  
+00001244                           439  WordSizeImmediate
+00001244  3818                     440          MOVE.W  (A0)+,D4    *read in next word, data is that word
+00001246                           441          
+00001246                           442          *Output '.W' to console...
+00001246  43F9 00001968            443          LEA     WordSize,A1 *Loads WordSize into address register A1
+0000124C  103C 000E                444          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001250  4E4F                     445          TRAP    #15         *Displays Message
+00001252                           446          
+00001252                           447          *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+00001252                           448          *Output some message, the immediate data is...
+00001252                           449          *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+00001252                           450          *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001252                           451          *TRAP    #15         *Displays Message
+00001252                           452          
+00001252  4EF8 1230                453          JMP     WrapperSizeImmediateEnd
+00001256                           454                  
+00001256                           455  LongSizeImmediate
+00001256  2818                     456          MOVE.L  (A0)+,D4    *read in next two words, data is those two words
+00001258                           457          
+00001258                           458          *Output '.L' to console...
+00001258  43F9 0000196F            459          LEA     LongSize,A1 *Loads LongSize into address register A1
+0000125E  103C 000E                460          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001262  4E4F                     461          TRAP    #15         *Displays Message
+00001264                           462          
+00001264                           463          *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+00001264                           464          *Output some message, the immediate data is...
+00001264                           465          *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+00001264                           466          *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+00001264                           467          *TRAP    #15         *Displays Message
+00001264                           468          
+00001264  4EF8 1230                469          JMP     WrapperSizeImmediateEnd
+00001268                           470  
+00001268                           471  
+00001268                           472  *-----------------------------------------------------------        
+00001268                           473  * EA Mode/EA Register decoding functionality
+00001268                           474  *-----------------------------------------------------------        
+00001268                           475  DataRegMode
+00001268                           476          *Depending on the EA Register, output a different register number
+00001268  4EB9 000012AE            477          JSR     WrapperDataReg
+0000126E                           478          
+0000126E                           479          *Nothing else to do here, should maybe go straight to next instruction and not back
+0000126E                           480          *to the EA_ADDI portion?
+0000126E                           481  
+0000126E                           482  AddrDirectMode
+0000126E                           483          *some code...
+0000126E                           484  
+0000126E                           485  AddrIndirectMode
+0000126E                           486          *Depending on the EA Register, output a different register number
+0000126E  B63C 0000                487          CMP.B   #$00,D3
+00001272  6700 00FC                488          BEQ     AddrIndReg0
+00001276                           489          
+00001276  B63C 0001                490          CMP.B   #$01,D3
+0000127A  6700 0102                491          BEQ     AddrIndReg1
+0000127E                           492          
+0000127E  B63C 0002                493          CMP.B   #$02,D3
+00001282  6700 0108                494          BEQ     AddrIndReg2
+00001286                           495          
+00001286  B63C 0003                496          CMP.B   #$03,D3
+0000128A  6700 010E                497          BEQ     AddrIndReg3
+0000128E                           498          
+0000128E  B63C 0004                499          CMP.B   #$04,D3
+00001292  6700 0114                500          BEQ     AddrIndReg4
+00001296                           501          
+00001296  B63C 0005                502          CMP.B   #$05,D3
+0000129A  6700 011A                503          BEQ     AddrIndReg5
+0000129E                           504          
+0000129E  B63C 0006                505          CMP.B   #$06,D3
+000012A2  6700 0120                506          BEQ     AddrIndReg6
+000012A6                           507          
+000012A6  B63C 0007                508          CMP.B   #$07,D3
+000012AA  6700 0126                509          BEQ     AddrIndReg7
+000012AE                           510                          
+000012AE                           511          *Nothing else to do here, should maybe go straight to next instruction and not back
+000012AE                           512          *to the EA_ADDI portion?
+000012AE                           513  
+000012AE                           514  AddrIndirectPostMode
+000012AE                           515          *Depending on the EA Register, output a different register number
+000012AE                           516          
+000012AE                           517  
+000012AE                           518          *Nothing else to do here, should maybe go straight to next instruction and not back
+000012AE                           519          *to the EA_ADDI portion?
+000012AE                           520  
+000012AE                           521  AddrIndirectPreMode
+000012AE                           522          *Depending on the EA Register, output a different register number
+000012AE                           523  
+000012AE                           524          *Nothing else to do here, should maybe go straight to next instruction and not back
+000012AE                           525          *to the EA_ADDI portion?
+000012AE                           526  
+000012AE                           527  AddrAbsoluteMode
+000012AE                           528          *Depending on the EA Register, output a different register number
+000012AE                           529  
+000012AE                           530          *READ IN THE NEXT WORD ADDRESS OR LONG ADDRESS, DEPENDING ON EA REGISTER, ALSO OUTPUT
+000012AE                           531  
+000012AE                           532          *Nothing else to do here, should maybe go straight to next instruction and not back
+000012AE                           533          *to the EA_ADDI portion?
+000012AE                           534          
+000012AE                           535  ImmediateDataMode
+000012AE                           536          *some code      
+000012AE                           537  
+000012AE                           538  
+000012AE                           539  *-----------------------------------------------------------        
+000012AE                           540  * Output logic for all Data Registers (0-7)
+000012AE                           541  *-----------------------------------------------------------     
+000012AE                           542  *'Wrapper' func used for outputing the correct register. Used to do the nasty branching
+000012AE                           543  WrapperDataReg
+000012AE  B63C 0000                544          CMP.B   #$00,D3
+000012B2  6700 003C                545          BEQ     DataReg0
+000012B6                           546          
+000012B6  B63C 0001                547          CMP.B   #$01,D3
+000012BA  6700 0044                548          BEQ     DataReg1
+000012BE                           549          
+000012BE  B63C 0002                550          CMP.B   #$02,D3
+000012C2  6700 004C                551          BEQ     DataReg2
+000012C6                           552          
+000012C6  B63C 0003                553          CMP.B   #$03,D3
+000012CA  6700 0054                554          BEQ     DataReg3
+000012CE                           555          
+000012CE  B63C 0004                556          CMP.B   #$04,D3
+000012D2  6700 005C                557          BEQ     DataReg4
+000012D6                           558          
+000012D6  B63C 0005                559          CMP.B   #$05,D3
+000012DA  6700 0064                560          BEQ     DataReg5
+000012DE                           561          
+000012DE  B63C 0006                562          CMP.B   #$06,D3
+000012E2  6700 006C                563          BEQ     DataReg6
+000012E6                           564          
+000012E6  B63C 0007                565          CMP.B   #$07,D3
+000012EA  6700 0074                566          BEQ     DataReg7        
+000012EE                           567  
+000012EE                           568  *Used to get back to 'DataRegMode', after dealing with the specific register
+000012EE                           569  WrapperDataRegEnd
+000012EE  4E75                     570          RTS
+000012F0                           571  
+000012F0                           572  DataReg0
+000012F0                           573          *Output some message, EA mode is data register 0...
+000012F0  43F9 00001976            574          LEA     OutDataReg0,A1  *Loads DataReg0 into address register A1
+000012F6  103C 000E                575          MOVE.B  #14,D0          *Moves the number 14 into data register D0
+000012FA  4E4F                     576          TRAP    #15             *Displays Message   
+000012FC                           577          
+000012FC  4EF8 12EE                578          JMP     WrapperDataRegEnd
+00001300                           579  
+00001300                           580  DataReg1
+00001300  43F9 0000197C            581          LEA     OutDataReg1,A1
+00001306  103C 000E                582          MOVE.B  #14,D0
+0000130A  4E4F                     583          TRAP    #15
+0000130C                           584          
+0000130C  4EF8 12EE                585          JMP     WrapperDataRegEnd
+00001310                           586  
+00001310                           587  DataReg2
+00001310  43F9 00001982            588          LEA     OutDataReg2,A1
+00001316  103C 000E                589          MOVE.B  #14,D0
+0000131A  4E4F                     590          TRAP    #15
+0000131C                           591  
+0000131C  4EF8 12EE                592          JMP     WrapperDataRegEnd
+00001320                           593      
+00001320                           594  DataReg3
+00001320  43F9 00001988            595          LEA     OutDataReg3,A1
+00001326  103C 000E                596          MOVE.B  #14,D0
+0000132A  4E4F                     597          TRAP    #15
+0000132C                           598  
+0000132C  4EF8 12EE                599          JMP     WrapperDataRegEnd
+00001330                           600          
+00001330                           601  DataReg4
+00001330  43F9 0000198E            602          LEA     OutDataReg4,A1
+00001336  103C 000E                603          MOVE.B  #14,D0
+0000133A  4E4F                     604          TRAP    #15
+0000133C                           605  
+0000133C  4EF8 12EE                606          JMP     WrapperDataRegEnd
+00001340                           607                 
+00001340                           608  DataReg5
+00001340  43F9 00001994            609          LEA     OutDataReg5,A1
+00001346  103C 000E                610          MOVE.B  #14,D0
+0000134A  4E4F                     611          TRAP    #15
+0000134C                           612  
+0000134C  4EF8 12EE                613          JMP     WrapperDataRegEnd
+00001350                           614          
+00001350                           615  DataReg6
+00001350  43F9 0000199A            616          LEA     OutDataReg6,A1 A1
+00001356  103C 000E                617          MOVE.B  #14,D0
+0000135A  4E4F                     618          TRAP    #15
+0000135C                           619  
+0000135C  4EF8 12EE                620          JMP     WrapperDataRegEnd
+00001360                           621          
+00001360                           622  DataReg7
+00001360  43F9 000019A0            623          LEA     OutDataReg7,A1
+00001366  103C 000E                624          MOVE.B  #14,D0
+0000136A  4E4F                     625          TRAP    #15
+0000136C                           626          
+0000136C  4EF8 12EE                627          JMP     WrapperDataRegEnd
+00001370                           628  
+00001370                           629  
+00001370                           630  *-----------------------------------------------------------        
+00001370                           631  * Output logic for all Address Indirec Registers (0-7)
+00001370                           632  *-----------------------------------------------------------     
+00001370                           633  AddrIndReg0
+00001370                           634          *Output some message, EA mode is address indirect 0...
+00001370  43F9 000019A6            635          LEA     OutAddrIndReg0,A1   *Loads AddrIndReg0 into address register A1
+00001376  103C 000E                636          MOVE.B  #14,D0              *Moves the number 14 into data register D0
+0000137A  4E4F                     637          TRAP    #15                 *Displays Message        
+0000137C                           638          
+0000137C  4E75                     639          RTS
+0000137E                           640  
+0000137E                           641  AddrIndReg1
+0000137E  43F9 000019AE            642          LEA     OutAddrIndReg1,A1
+00001384  103C 000E                643          MOVE.B  #14,D0
+00001388  4E4F                     644          TRAP    #15
+0000138A                           645          
+0000138A  4E75                     646          RTS
+0000138C                           647  
+0000138C                           648  AddrIndReg2
+0000138C  43F9 000019B6            649          LEA     OutAddrIndReg2,A1
+00001392  103C 000E                650          MOVE.B  #14,D0
+00001396  4E4F                     651          TRAP    #15
+00001398                           652          
+00001398  4E75                     653          RTS
+0000139A                           654  
+0000139A                           655  AddrIndReg3
+0000139A  43F9 000019BE            656          LEA     OutAddrIndReg3,A1
+000013A0  103C 000E                657          MOVE.B  #14,D0
+000013A4  4E4F                     658          TRAP    #15
+000013A6                           659          
+000013A6  4E75                     660          RTS
+000013A8                           661  
+000013A8                           662  AddrIndReg4
+000013A8  43F9 000019C6            663          LEA     OutAddrIndReg4,A1
+000013AE  103C 000E                664          MOVE.B  #14,D0
+000013B2  4E4F                     665          TRAP    #15
+000013B4                           666          
+000013B4  4E75                     667          RTS
+000013B6                           668  
+000013B6                           669  AddrIndReg5
+000013B6  43F9 000019CE            670          LEA     OutAddrIndReg5,A1
+000013BC  103C 000E                671          MOVE.B  #14,D0
+000013C0  4E4F                     672          TRAP    #15
+000013C2                           673          
+000013C2  4E75                     674          RTS
+000013C4                           675  
+000013C4                           676  AddrIndReg6
+000013C4  43F9 000019D6            677          LEA     OutAddrIndReg6,A1
+000013CA  103C 000E                678          MOVE.B  #14,D0
+000013CE  4E4F                     679          TRAP    #15
+000013D0                           680          
+000013D0  4E75                     681          RTS
+000013D2                           682  
+000013D2                           683  AddrIndReg7
+000013D2  43F9 000019DE            684          LEA     OutAddrIndReg7,A1
+000013D8  103C 000E                685          MOVE.B  #14,D0
+000013DC  4E4F                     686          TRAP    #15
+000013DE                           687          
+000013DE  4E75                     688          RTS
+000013E0                           689  
+000013E0                           690  
+000013E0                           691  *-----------------------------------------------------------        
+000013E0                           692  * Current handling of bad op/ea codes. Should be revisited.
+000013E0                           693  *----------------------------------------------------------- 
+000013E0                           694  BADOPCODE
+000013E0                           695          *We found a bad op code, output some error to the screen, jump to the 
+000013E0                           696          *next instruction in memory.
+000013E0                           697          *NOTE: IF THIS INSTRUCTION HAD IMMEDIATE OR ABSOLUTE DATA ATTACHED TO IT,
+000013E0                           698          *THEN WE WILL NEED SOME WAY TO FIGURE THAT OUT AND READ THROUGH THAT DATA.
+000013E0                           699          *OTHERWISE, THE NEXT OP WILL TRY TO TREAT THAT IMMEDIATE/ABSOULTE DATA AS
+000013E0                           700          *A LEGIT INSTRUCTION, NOT GARBAGE!!!
+000013E0                           701          *i/o and error message code...
+000013E0  43F9 000019F6            702          LEA     BADOPMSG,A1 *Loads BADOPMSG into address register A1        
+000013E6  103C 000E                703          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+000013EA  4E4F                     704          TRAP    #15         *Displays Message
+000013EC  4EF8 10AC                705          JMP     GRAB_NEXT_OP
+000013F0                           706                  
+000013F0                           707  BADEACODE
+000013F0                           708          *We found a bad ea code, output some error to the screen, jump to the
+000013F0                           709          *next instruction in memory.
+000013F0                           710          *NOTE: WE SHOULDN'T HAVE TO WORRY ABOUT GARBAGE IMMEDAIATE/ABSOLUTE DATA
+000013F0                           711          *HERE, EACH EA FUNC SHOULD HAVE TAKEN CARE OF THAT BEFORE JUMPIN TO THIS FUNC        
+000013F0  43F9 000019E6            712          LEA     BADEAMSG,A1 *Loads BADEAMSG into address register A1        
+000013F6  103C 000E                713          MOVE.B  #14,D0      *Moves the number 14 into data register D0
+000013FA  4E4F                     714          TRAP    #15         *Displays Message
+000013FC  4EF8 10AC                715          JMP     GRAB_NEXT_OP
+00001400                           716          
+00001400                           717          
+00001400                           718  *-----------------------------------------------------------        
+00001400                           719  * End of Disassembler
+00001400                           720  *-----------------------------------------------------------    
+00001400                           721  
+00001400  4E72 2700                722  DONE    STOP    #$2700  *What does this do? Why was it added?
+00001404                           723  
+00001404  103C 0009                724  THEEND  MOVE.B  #9,D0
+00001408  4E4F                     725          TRAP    #15             Halt Simulator        
+0000140A                           726          
+0000140A                           727       
+0000140A                           728  *-----------------------------------------------------------        
+0000140A                           729  * Output stuff
+0000140A                           730  *-----------------------------------------------------------     
+0000140A  =0000000D                731  CR      EQU     $0D             ASCII code for Carriage Return
+0000140A  =0000000A                732  LF      EQU     $0A             ASCII code for Line Feed
+0000140A= 2D 2D 2D 2D 2D 2D ...    733  MESSAGE     DC.B    '-------------------------------------------------------------',CR,LF
+00001449= 7C 7C 20 20 20 20 ...    734              DC.B    '||               Welcome to ZETA Disassembler              ||',CR,LF
+00001488= 2D 2D 2D 2D 2D 2D ...    735              DC.B    '-------------------------------------------------------------',CR,LF
+000014C7= 2A 2A 2A 2A 2A 2A ...    736              DC.B    '*************************************************************',CR,LF
+00001506= 2A 2A 2A 2A 2A 2A ...    737              DC.B    '*************************************************************',CR,LF
+00001545= 2A 2A 2A 2A 2A 2A ...    738              DC.B    '******           ***        ***           ****    ***********',CR,LF
+00001584= 2A 2A 2A 2A 2A 2A ...    739              DC.B    '************    ****   ************   *******  **  **********',CR,LF
+000015C3= 2A 2A 2A 2A 2A 2A ...    740              DC.B    '**********    ******        *******   ******        *********',CR,LF
+00001602= 2A 2A 2A 2A 2A 2A ...    741              DC.B    '********    ********   ************   *****   ****   ********',CR,LF
+00001641= 2A 2A 2A 2A 2A 2A ...    742              DC.B    '******           ***        *******   ****   ******   *******',CR,LF
+00001680= 2A 2A 2A 2A 2A 2A ...    743              DC.B    '*************************************************************',CR,LF
+000016BF= 2A 2A 2A 2A 2A 2A ...    744              DC.B    '*************************************************************',CR,LF
+000016FE= 2A 20 20 20 20 20 ...    745              DC.B    '*                                                           *',CR,LF
+0000173D= 2A 20 41 75 74 68 ...    746              DC.B    '* Authors: Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi *',CR,LF
+0000177C= 2A 20 20 20 20 20 ...    747              DC.B    '*                                                           *',CR,LF
+000017BB= 2A 2A 2A 2A 2A 2A ...    748              DC.B    '*************************************************************',CR,LF,CR,LF
+000017FC= 53 74 61 72 74 69 ...    749              DC.B    'Starting disassembler...',CR,LF,CR,LF,0
+00001819                           750              
+00001819= 57 6F 75 6C 64 20 ...    751  STARTASSEM  DC.B    'Would you like to start disassembling the test? ',0
+0000184A                           752  
+0000184A= 20 0D 0A                 753  GETSTRTADDR DC.B    ' ',CR,LF
+0000184D= 50 6C 65 61 73 65 ...    754              DC.B    'Please type in your starting address request: ',0
+0000187C                           755              
+0000187C= 20 0D 0A                 756  GETENDADDR  DC.B    ' ',CR,LF
+0000187F= 50 6C 65 61 73 65 ...    757              DC.B    'Please type in your ending address request: ',0
+000018AC                           758              
+000018AC= 20 0D 0A                 759  QUIT_MSG    DC.B    ' ',CR,LF
+000018AF= 57 6F 75 6C 64 20 ...    760              DC.B    'Would you like to quit (Y/N)? ',0
+000018CE                           761  
+000018CE                           762  *****************************************************
+000018CE                           763  * I/O storages - assuming users knows what to do.
+000018CE                           764  *****************************************************
+000018CE                           765  CMD_HLD     DS.B    30
+000018EC                           766  CMD_SZ      DS.B    30
+0000190A                           767  STADDR      DS.B    10
+00001914                           768  STADDRSZ    DS.B    10
+0000191E                           769  ENDADDR     DS.B    10
+00001928                           770  ENDADDRSZ   DS.B    10
+00001932                           771  *****************************************************
+00001932                           772  
+00001932                           773  *output for all OPCODEs
+00001932= 41 44 44 49 00           774  ADDI    DC.B    'ADDI',0
+00001937= 41 4E 44 49 00           775  ANDI    DC.B    'ANDI',0
+0000193C= 45 4F 52 49 00           776  EORI    DC.B    'EORI',0
+00001941= 42 43 48 47 28 64 ...    777  BCHG_D  DC.B    'BCHG(dynamic)',0
+0000194F= 42 43 48 47 28 73 ...    778  BCHG_S  DC.B    'BCHG(static)',0
+0000195C= 43 4D 50 49 00           779  CMPI    DC.B    'CMPI',0
+00001961                           780  
+00001961                           781  *output for the size of the operation
+00001961= 2E 42 20 20 20 20 00     782  ByteSize    DC.B    '.B    ',0
+00001968= 2E 57 20 20 20 20 00     783  WordSize    DC.B    '.W    ',0
+0000196F= 2E 4C 20 20 20 20 00     784  LongSize    DC.B    '.L    ',0
+00001976                           785  
+00001976                           786  *output for all data registers (0-7)
+00001976= 2C 44 30 0D 0A 00        787  OutDataReg0 DC.B    ',D0',CR,LF,0
+0000197C= 2C 44 31 0D 0A 00        788  OutDataReg1 DC.B    ',D1',CR,LF,0
+00001982= 2C 44 32 0D 0A 00        789  OutDataReg2 DC.B    ',D2',CR,LF,0
+00001988= 2C 44 33 0D 0A 00        790  OutDataReg3 DC.B    ',D3',CR,LF,0
+0000198E= 2C 44 34 0D 0A 00        791  OutDataReg4 DC.B    ',D4',CR,LF,0
+00001994= 2C 44 35 0D 0A 00        792  OutDataReg5 DC.B    ',D5',CR,LF,0
+0000199A= 2C 44 36 0D 0A 00        793  OutDataReg6 DC.B    ',D6',CR,LF,0
+000019A0= 2C 44 37 0D 0A 00        794  OutDataReg7 DC.B    ',D7',CR,LF,0
+000019A6                           795  
+000019A6                           796  *output for all address indirect registers (0-7)
+000019A6= 2C 28 41 30 29 0D ...    797  OutAddrIndReg0  DC.B    ',(A0)',CR,LF,0
+000019AE= 2C 28 41 31 29 0D ...    798  OutAddrIndReg1  DC.B    ',(A1)',CR,LF,0
+000019B6= 2C 28 41 32 29 0D ...    799  OutAddrIndReg2  DC.B    ',(A2)',CR,LF,0
+000019BE= 2C 28 41 33 29 0D ...    800  OutAddrIndReg3  DC.B    ',(A3)',CR,LF,0
+000019C6= 2C 28 41 34 29 0D ...    801  OutAddrIndReg4  DC.B    ',(A4)',CR,LF,0
+000019CE= 2C 28 41 35 29 0D ...    802  OutAddrIndReg5  DC.B    ',(A5)',CR,LF,0
+000019D6= 2C 28 41 36 29 0D ...    803  OutAddrIndReg6  DC.B    ',(A6)',CR,LF,0
+000019DE= 2C 28 41 37 29 0D ...    804  OutAddrIndReg7  DC.B    ',(A7)',CR,LF,0
+000019E6                           805  
+000019E6                           806  *current output for error messages
+000019E6= 42 41 44 20 45 41 ...    807  BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
+000019F6= 42 41 44 20 4F 50 ...    808  BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
+00001A0B= 49 6D 70 72 6F 70 ...    809  INV_MSG     DC.B    'Improper command.',CR,LF,0
+00001A1F= 49 6E 76 61 6C 69 ...    810  INVSTRTMSG  DC.B    'Invalid start address.',CR,LF,0
+00001A38                           811          
+00001A38                           812          END     START
 
 No errors detected
 No warnings generated
@@ -773,27 +822,27 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ADDI                18F6
-ADDRABSOLUTEMODE    12E4
-ADDRDIRECTMODE      12A4
-ADDRINDIRECTMODE    12A4
-ADDRINDIRECTPOSTMODE  12E4
-ADDRINDIRECTPREMODE  12E4
-ADDRINDREG0         1344
-ADDRINDREG1         1350
-ADDRINDREG2         135C
-ADDRINDREG3         1368
-ADDRINDREG4         1374
-ADDRINDREG5         1380
-ADDRINDREG6         138C
-ADDRINDREG7         1398
-ANDI                18FB
-BADEACODE           13B4
-BADEAMSG            199E
-BADOPCODE           13A4
-BADOPMSG            19AE
-BCHG_D              1905
-BCHG_S              1913
+ADDI                1932
+ADDRABSOLUTEMODE    12AE
+ADDRDIRECTMODE      126E
+ADDRINDIRECTMODE    126E
+ADDRINDIRECTPOSTMODE  12AE
+ADDRINDIRECTPREMODE  12AE
+ADDRINDREG0         1370
+ADDRINDREG1         137E
+ADDRINDREG2         138C
+ADDRINDREG3         139A
+ADDRINDREG4         13A8
+ADDRINDREG5         13B6
+ADDRINDREG6         13C4
+ADDRINDREG7         13D2
+ANDI                1937
+BADEACODE           13F0
+BADEAMSG            19E6
+BADOPCODE           13E0
+BADOPMSG            19F6
+BCHG_D              1941
+BCHG_S              194F
 BUCKET0000_BITS     0
 BUCKET0001_BITS     1
 BUCKET0010_BITS     2
@@ -807,93 +856,96 @@ BUCKET1011_BITS     B
 BUCKET1100_BITS     C
 BUCKET1101_BITS     D
 BUCKET1110_BITS     E
-BUCKET_0000         10B6
-BUCKET_0001         125E
-BUCKET_0010         125E
-BUCKET_0011         125E
-BUCKET_0100         125E
-BUCKET_0101         125E
-BUCKET_0110         125E
-BUCKET_1000         125E
-BUCKET_1001         125E
-BUCKET_1011         125E
-BUCKET_1100         125E
-BUCKET_1101         125E
-BUCKET_1110         125E
-BYTESIZE            1925
-BYTESIZEIMMEDIATE   1156
+BUCKET_0000         10B8
+BUCKET_0001         1210
+BUCKET_0010         1210
+BUCKET_0011         1210
+BUCKET_0100         1210
+BUCKET_0101         1210
+BUCKET_0110         1210
+BUCKET_1000         1210
+BUCKET_1001         1210
+BUCKET_1011         1210
+BUCKET_1100         1210
+BUCKET_1101         1210
+BUCKET_1110         1210
+BYTESIZE            1961
+BYTESIZEIMMEDIATE   1232
 CHECKSTRT1          1098
 CHECK_LOWN          1052
 CHECK_LOWY          103A
 CHECK_UPN           1046
 CHECK_UPY           102E
-CMD_HLD             1892
-CMD_SZ              18B0
-CMPI                1920
+CMD_HLD             18CE
+CMD_SZ              18EC
+CMPI                195C
 CR                  D
-DATAREG0            12E4
-DATAREG1            12F0
-DATAREG2            12FC
-DATAREG3            1308
-DATAREG4            1314
-DATAREG5            1320
-DATAREG6            132C
-DATAREG7            1338
-DATAREGMODE         1264
-DETERMINEEAMODE     1192
-DONE                13C4
-EA_ADDI             113C
-EA_ANDI             11D6
-EA_BCHG_D           1220
-EA_BCHG_S           123C
-EA_CMPI             1258
-EA_EORI             11F2
-ENDADDR             18E2
-ENDADDRSZ           18EC
-EORI                1900
-GETENDADDR          1840
-GETSTRTADDR         180E
-GRAB_NEXT_OP        10AA
-IMMEDIATEDATAMODE   12E4
+DATAREG0            12F0
+DATAREG1            1300
+DATAREG2            1310
+DATAREG3            1320
+DATAREG4            1330
+DATAREG5            1340
+DATAREG6            1350
+DATAREG7            1360
+DATAREGMODE         1268
+DONE                1400
+EA_ADDI             113E
+EA_ANDI             1188
+EA_BCHG_D           11D2
+EA_BCHG_S           11EE
+EA_CMPI             120A
+EA_EORI             11A4
+ENDADDR             191E
+ENDADDRSZ           1928
+EORI                193C
+GETENDADDR          187C
+GETSTRTADDR         184A
+GRAB_NEXT_OP        10AC
+IMMEDIATEDATAMODE   12AE
 INVALID1            105E
-INVSTRTMSG          19D7
-INV_MSG             19C3
+INVSTRTMSG          1A1F
+INV_MSG             1A0B
 INV_STRT1           106E
-IS_ADDI             110C
-IS_ANDI             11C0
-IS_BCHG_D           11F8
-IS_BCHG_S           1226
-IS_CMPI             1242
-IS_EORI             11DC
+IS_ADDI             110E
+IS_ANDI             1172
+IS_BCHG_D           11AA
+IS_BCHG_S           11D8
+IS_CMPI             11F4
+IS_EORI             118E
 LF                  A
-LONGSIZE            192B
-LONGSIZEIMMEDIATE   117E
+LONGSIZE            196F
+LONGSIZEIMMEDIATE   1256
 LOOP_1              1010
-MESSAGE             13CE
+MESSAGE             140A
 NXT_CMD             1080
-OUTADDRINDREG0      195E
-OUTADDRINDREG1      1966
-OUTADDRINDREG2      196E
-OUTADDRINDREG3      1976
-OUTADDRINDREG4      197E
-OUTADDRINDREG5      1986
-OUTADDRINDREG6      198E
-OUTADDRINDREG7      1996
-OUTDATAREG0         192E
-OUTDATAREG1         1934
-OUTDATAREG2         193A
-OUTDATAREG3         1940
-OUTDATAREG4         1946
-OUTDATAREG5         194C
-OUTDATAREG6         1952
-OUTDATAREG7         1958
-QUIT_MSG            1870
+OUTADDRINDREG0      19A6
+OUTADDRINDREG1      19AE
+OUTADDRINDREG2      19B6
+OUTADDRINDREG3      19BE
+OUTADDRINDREG4      19C6
+OUTADDRINDREG5      19CE
+OUTADDRINDREG6      19D6
+OUTADDRINDREG7      19DE
+OUTDATAREG0         1976
+OUTDATAREG1         197C
+OUTDATAREG2         1982
+OUTDATAREG3         1988
+OUTDATAREG4         198E
+OUTDATAREG5         1994
+OUTDATAREG6         199A
+OUTDATAREG7         19A0
+QUIT_MSG            18AC
 STACK               7000
-STADDR              18CE
-STADDRSZ            18D8
+STADDR              190A
+STADDRSZ            1914
 START               1000
-STARTASSEM          17DD
+STARTASSEM          1819
 ST_ADDR             7FC0
-THEEND              13C8
-WORDSIZE            1928
-WORDSIZEIMMEDIATE   116A
+THEEND              1404
+WORDSIZE            1968
+WORDSIZEIMMEDIATE   1244
+WRAPPERDATAREG      12AE
+WRAPPERDATAREGEND   12EE
+WRAPPERSIZEIMMEDIATE  1216
+WRAPPERSIZEIMMEDIATEEND  1230
