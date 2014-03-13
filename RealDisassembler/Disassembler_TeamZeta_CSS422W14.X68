@@ -165,13 +165,13 @@ IS_ADDI
         CMP.B   #$03,D1     *Compare the size bits to $3
         BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
         
-        *Output some message, hey we found an ADDI instruction...
-        LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *Output 'ADDI' to console...
+        LEA     ADDI,A1  *Loads FNDADDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
         
-        *Should have a valid IS_ADDI op code. Set data up for EA.
+        *Should have a valid ADDI op code. Set data up for EA.
          
         *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
@@ -199,20 +199,56 @@ EA_ADDI
         CMP.B   #$02,D1     *If the size of operation is long, get the immediate data
         BEQ     LongSizeImmediate
                         
-*These should prob be funcs we can jsr to, going to do this many times probably
+*These NEED TO BE funcs we can jsr to, going to do this many times...
 ByteSizeImmediate
-        MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word        
+        MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word   
+        
+        *Output '.B' to console...
+        LEA     ByteSize,A1 *Loads ByteSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+        *Output some message, the immediate data is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+     
         JMP     DetermineEaMode *should be an RTS, but for now just jump around
                 
 WordSizeImmediate
         MOVE.W  (A0)+,D4    *read in next word, data is that word
+        
+        *Output '.W' to console...
+        LEA     WordSize,A1 *Loads WordSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+        *Output some message, the immediate data is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+        
         JMP     DetermineEaMode *should be an RTS, but for now just jump around
                 
 LongSizeImmediate
         MOVE.L  (A0)+,D4    *read in next two words, data is those two words
+        
+        *Output '.L' to console...
+        LEA     LongSize,A1 *Loads LongSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
+        *Output some message, the immediate data is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+        
         JMP     DetermineEaMode *should be an RTS, but for now just jump around
 
-        
+
 DetermineEaMode *Won't be needed once we make the 'XSizeImmediate' code blocks into funcs
         CMP.B   #$00,D2
         BEQ     DataRegMode *If EA mode is a data register, output that
@@ -229,82 +265,20 @@ DetermineEaMode *Won't be needed once we make the 'XSizeImmediate' code blocks i
         CMP.B   #$07,D2
         BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
         
-        *If the ea mode isn't equal to any of these, it is an invalid EA (JMP to BADEACODE)
-        *Not quite the best way to determine that it ISN'T any of these valid EA modes...
-                
-*These should prob be funcs we can jsr to, going to be doing this for like every EA decoding...
-DataRegMode
-        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
-        *Output some message, EA mode is data register...
-        LEA     FNDDATAREG,A1   *Loads FNDDATAREG into address register A1
-        MOVE.B  #14,D0          *Moves the number 14 into data register D0
-        TRAP    #15             *Displays Message
-        
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
-                
-AddrDirectMode  *Not used in ADDI, just put here so I don't forget to make a func of it
-        *some code...
-
-AddrIndirectMode
-        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
-        *Output some message, EA mode is Address Indirect...
-        LEA     FNDADDRIND,A1   *Loads FNDADDRIND into address register A1
-        MOVE.B  #14,D0          *Moves the number 14 into data register D0
-        TRAP    #15             *Displays Message
-                        
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
-
-AddrIndirectPostMode
-        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
-        *Output some message, EA mode is Address Indirect Post...
-        LEA     FNDADDRINDPO,A1 *Loads FNDADDRINDPO into address register A1
-        MOVE.B  #14,D0          *Moves the number 14 into data register D0
-        TRAP    #15             *Displays Message
-
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
-
-AddrIndirectPreMode
-        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT REGISTER NUMBER!
-        *Output some message, EA mode is Address Indirect Pre...
-        LEA     FNDADDRINDPR,A1 *Loads FNDADDRINDPR into address register A1
-        MOVE.B  #14,D0          *Moves the number 14 into data register D0
-        TRAP    #15             *Displays Message
-
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
-
-AddrAbsoluteMode
-        *DEPENDING ON THE EA REGISTER, OUTPUT A DIFFERENT ABSOLUTE MODE!
-        *Output some message, EA mode is Address Absolute...
-        LEA     FNDADDRIND,A1   *Loads FNDADDRIND into address register A1
-        MOVE.B  #14,D0          *Moves the number 14 into data register D0
-        TRAP    #15             *Displays Message
-
-        *READ IN THE NEXT WORD ADDRESS OR LONG ADDRESS, DEPENDING ON EA REGISTER, ALSO OUTPUT
-
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
-
-ImmediateDataMode   *Not used in ADDI, just put here so I don't forget to make a func of it
-        *some code
-        
-        
-        JMP     THEEND  *For now just end
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE                                
 
 
 *Now we know this instruction is exactly ANDI, lets set everything up for EA.
 IS_ANDI
         *TODO:Verify bits
 
-        *Output some message, hey we found an ANDI instruction...
-        LEA     FNDANDI,A1  *Loads FNDANDI into address register A1
+        *Output 'ANDI' to console...
+        LEA     ANDI,A1  *Loads FNDANDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_ANDI op code. Set data up for EA.
+        *Should have a valid ANDI op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_ANDI
@@ -317,12 +291,12 @@ EA_ANDI
 IS_EORI
 		*TODO:Verify bits
 
-		*Output some message, hey we found an EORI instruction...
-        LEA     FNDEORI,A1  *Loads FNDEORI into address register A1
+		*Output 'EORI' to console...
+        LEA     EORI,A1  *Loads FNDEORI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_EORI op code. Set data up for EA.
+        *Should have a valid EORI op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_EORI
@@ -343,8 +317,8 @@ IS_BCHG_D
         BTST.L  #$06,D0
         BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
         
-        *Output a message, hey we found a BCHG(dynamic) instruction...
-        LEA     FNDBCHG_D,A1    *Loads FNDBCHG_D into address register A1
+        *Output 'BCHG(dynamic)' to console...
+        LEA     BCHG_D,A1    *Loads FNDBCHG_D into address register A1
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message
                 
@@ -361,12 +335,12 @@ EA_BCHG_D
 IS_BCHG_S
 		*TODO:Verify bits
 
-		*Output some message, hey we found an BCHG_S instruction...
-        LEA     FNDBCHG_S,A1    *Loads FNDBCHG_S into address register A1
+		*Output 'BCHG_S' to console...
+        LEA     BCHG_S,A1    *Loads FNDBCHG_S into address register A1
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message
         
-        *Should have a valid IS_BCHG_S op code. Set data up for EA.
+        *Should have a valid BCHG_S op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_BCHG_S
@@ -379,12 +353,12 @@ EA_BCHG_S
 IS_CMPI
 		*TODO:Verify bits
 
-		*Output some message, hey we found an CMPI instruction...
-        LEA     FNDCMPI,A1  *Loads FNDCMPI into address register A1
+		*Output 'CMPI' to console...
+        LEA     CMPI,A1  *Loads FNDCMPI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *Should have a valid IS_CMPI op code. Set data up for EA.
+        *Should have a valid CMPI op code. Set data up for EA.
         *TODO:
         MOVE.B  #14,D3
         JMP     EA_CMPI
@@ -484,6 +458,190 @@ BUCKET1110_BITS EQU $E
         JMP     BADOPCODE  
         
         
+*-----------------------------------------------------------        
+* EA Mode/EA Register decoding functionality
+*-----------------------------------------------------------        
+*These WILL be funcs we can jsr to, going to be doing this for like every EA decoding...
+DataRegMode
+        *Depending on the EA Register, output a different register number
+        CMP.B   #$00,D3
+        BEQ     DataReg0
+        
+        CMP.B   #$01,D3
+        BEQ     DataReg1
+        
+        CMP.B   #$02,D3
+        BEQ     DataReg2
+        
+        CMP.B   #$03,D3
+        BEQ     DataReg3
+        
+        CMP.B   #$04,D3
+        BEQ     DataReg4
+        
+        CMP.B   #$05,D3
+        BEQ     DataReg5
+        
+        CMP.B   #$06,D3
+        BEQ     DataReg6
+        
+        CMP.B   #$07,D3
+        BEQ     DataReg7
+        
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrDirectMode
+        *some code...
+
+AddrIndirectMode
+        *Depending on the EA Register, output a different register number
+        CMP.B   #$00,D3
+        BEQ     AddrIndReg0
+        
+        CMP.B   #$01,D3
+        BEQ     AddrIndReg1
+        
+        CMP.B   #$02,D3
+        BEQ     AddrIndReg2
+        
+        CMP.B   #$03,D3
+        BEQ     AddrIndReg3
+        
+        CMP.B   #$04,D3
+        BEQ     AddrIndReg4
+        
+        CMP.B   #$05,D3
+        BEQ     AddrIndReg5
+        
+        CMP.B   #$06,D3
+        BEQ     AddrIndReg6
+        
+        CMP.B   #$07,D3
+        BEQ     AddrIndReg7
+                        
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrIndirectPostMode
+        *Depending on the EA Register, output a different register number
+        
+
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrIndirectPreMode
+        *Depending on the EA Register, output a different register number
+
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+
+AddrAbsoluteMode
+        *Depending on the EA Register, output a different register number
+
+        *READ IN THE NEXT WORD ADDRESS OR LONG ADDRESS, DEPENDING ON EA REGISTER, ALSO OUTPUT
+
+        *Nothing else to do here, should maybe go straight to next instruction and not back
+        *to the EA_ADDI portion?
+        
+ImmediateDataMode
+        *some code      
+
+
+*-----------------------------------------------------------        
+* Output for all Data Registers (0-7)
+*-----------------------------------------------------------     
+*The 'DataRegX' code blocks WILL BE funcs
+DataReg0
+        *Output some message, EA mode is data register 0...
+        LEA     OutDataReg0,A1  *Loads DataReg0 into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message   
+
+DataReg1
+        LEA     OutDataReg1,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+DataReg2
+        LEA     OutDataReg2,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+DataReg3
+        LEA     OutDataReg3,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+DataReg4
+        LEA     OutDataReg4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+DataReg5
+        LEA     OutDataReg5,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+DataReg6
+        LEA     OutDataReg6,A1 A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+DataReg7
+        LEA     OutDataReg7,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+*-----------------------------------------------------------        
+* Output for all Address Indirec Registers (0-7)
+*-----------------------------------------------------------     
+*The 'AddrIndRegX' code blocks WILL BE funcs
+AddrIndReg0
+        *Output some message, EA mode is address indirect 0...
+        LEA     OutAddrIndReg0,A1   *Loads AddrIndReg0 into address register A1
+        MOVE.B  #14,D0              *Moves the number 14 into data register D0
+        TRAP    #15                 *Displays Message        
+
+AddrIndReg1
+        LEA     OutAddrIndReg1,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+AddrIndReg2
+        LEA     OutAddrIndReg2,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+AddrIndReg3
+        LEA     OutAddrIndReg3,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+AddrIndReg4
+        LEA     OutAddrIndReg4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+AddrIndReg5
+        LEA     OutAddrIndReg5,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+AddrIndReg6
+        LEA     OutAddrIndReg6,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+AddrIndReg7
+        LEA     OutAddrIndReg7,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+
+*-----------------------------------------------------------        
+* Current handling of bad op/ea codes. Should be revisited.
+*----------------------------------------------------------- 
 BADOPCODE
         *We found a bad op code, output some error to the screen, jump to the 
         *next instruction in memory.
@@ -496,8 +654,7 @@ BADOPCODE
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         JMP     GRAB_NEXT_OP
-        
-        
+                
 BADEACODE
         *We found a bad ea code, output some error to the screen, jump to the
         *next instruction in memory.
@@ -508,6 +665,7 @@ BADEACODE
         TRAP    #15         *Displays Message
         JMP     GRAB_NEXT_OP
         
+        
 *-----------------------------------------------------------        
 * End of Disassembler
 *-----------------------------------------------------------    
@@ -517,6 +675,10 @@ DONE	STOP	#$2700  *What does this do? Why was it added?
 THEEND  MOVE.B  #9,D0
         TRAP    #15             Halt Simulator        
         
+     
+*-----------------------------------------------------------        
+* Output stuff
+*-----------------------------------------------------------     
 CR      EQU     $0D             ASCII code for Carriage Return
 LF      EQU     $0A             ASCII code for Line Feed
 MESSAGE     DC.B	'-------------------------------------------------------------',CR,LF
@@ -559,14 +721,40 @@ ENDADDR		DS.B	10
 ENDADDRSZ	DS.B	10
 *****************************************************
 
-*for now, i guess every OPCODE will have a corresponding 'found it' msg...
-FNDADDI     DC.B    'Found an ADDI opcode',CR,LF,0
-FNDANDI     DC.B    'Found an ANDI opcode',CR,LF,0
-FNDEORI     DC.B    'Found an EORI opcode',CR,LF,0
-FNDBCHG_D   DC.B    'Found a BCHG(dynamic) opcode',CR,LF,0
-FNDBCHG_S   DC.B    'Found a BCHG(static) opcode',CR,LF,0
-FNDCMPI     DC.B    'Found a CMPI opcode',CR,LF,0
+*output for all OPCODEs
+ADDI    DC.B    'ADDI',0
+ANDI    DC.B    'ANDI',0
+EORI    DC.B    'EORI',0
+BCHG_D  DC.B    'BCHG(dynamic)',0
+BCHG_S  DC.B    'BCHG(static)',0
+CMPI    DC.B    'CMPI',0
 
+*output for the size of the operation
+ByteSize    DC.B    '.B    ',0
+WordSize    DC.B    '.W    ',0
+LongSize    DC.B    '.L    ',0
+
+*output for all data registers (0-7)
+OutDataReg0 DC.B    ',D0',CR,LF,0
+OutDataReg1 DC.B    ',D1',CR,LF,0
+OutDataReg2 DC.B    ',D2',CR,LF,0
+OutDataReg3 DC.B    ',D3',CR,LF,0
+OutDataReg4 DC.B    ',D4',CR,LF,0
+OutDataReg5 DC.B    ',D5',CR,LF,0
+OutDataReg6 DC.B    ',D6',CR,LF,0
+OutDataReg7 DC.B    ',D7',CR,LF,0
+
+*output for all address indirect registers (0-7)
+OutAddrIndReg0  DC.B    ',(A0)',CR,LF,0
+OutAddrIndReg1  DC.B    ',(A1)',CR,LF,0
+OutAddrIndReg2  DC.B    ',(A2)',CR,LF,0
+OutAddrIndReg3  DC.B    ',(A3)',CR,LF,0
+OutAddrIndReg4  DC.B    ',(A4)',CR,LF,0
+OutAddrIndReg5  DC.B    ',(A5)',CR,LF,0
+OutAddrIndReg6  DC.B    ',(A6)',CR,LF,0
+OutAddrIndReg7  DC.B    ',(A7)',CR,LF,0
+
+*current output for error messages
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
 BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
 INV_MSG		DC.B	'Improper command.',CR,LF,0
@@ -574,6 +762,7 @@ INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
         
         END     START
         
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
