@@ -197,7 +197,7 @@ EA_ADDI
         BEQ     DataRegMode *If EA mode is a data register, output that
         
         CMP.B   #$02,D2
-        BEQ     AddrDirectMode  *If EA mode is an addr indirect, output that
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
         
         CMP.B   #$03,D2
         BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
@@ -209,7 +209,7 @@ EA_ADDI
         BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
         
         *If the ea mode isn't equal to any of these, it is an invalid EA
-        JMP     BADEACODE                                
+        JMP     BADEACODE                               
 
 
 *Now we know this instruction is exactly ANDI, lets set everything up for EA.
@@ -404,16 +404,17 @@ BUCKET1110_BITS EQU $E
 *-----------------------------------------------------------        
 * EA operation size decoding functionality
 *-----------------------------------------------------------   
-*'Wrapper' func used for all ea decoding. Used to do the nasty branching for diff sizes
+*'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
 WrapperSizeImmediate
         CLR.L   D4
-        CMP.B   #$00,D1     *If the size of operation is byte, get immediate data/output
+        *Depending on the EA Register, choose which size to decode
+        CMP.B   #$00,D1
         BEQ     ByteSizeImmediate
         
-        CMP.B   #$01,D1     *If the size of operation is word, get immediate data/output
+        CMP.B   #$01,D1
         BEQ     WordSizeImmediate
 
-        CMP.B   #$02,D1     *If the size of operation is long, get immediate data/output
+        CMP.B   #$02,D1
         BEQ     LongSizeImmediate
         
 *Used to get back to what we were doing, after dealing with the specific size
@@ -476,38 +477,59 @@ DataRegMode
         *Depending on the EA Register, output a different register number
         JSR     WrapperDataReg
         
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
+        *need to read some flag, if this was called from a source EA decoding then jmp to 
+        *some wrapper (i'll define later)
+        
+        *else this was a destination EA decoding, we can just go get the next instruction
+        *since there is no more decoding to do for the current instruction
+        JMP     GRAB_NEXT_OP
 
 AddrDirectMode
         *some code...
 
 AddrIndirectMode
+        *Depending on the EA Register, output a different register number
         JSR     WrapperAddrIndirect
                         
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
+        *need to read some flag, if this was called from a source EA decoding then jmp to 
+        *some wrapper (i'll define later)
+        
+        *else this was a destination EA decoding, we can just go get the next instruction
+        *since there is no more decoding to do for the current instruction
+        JMP     GRAB_NEXT_OP
 
 AddrIndirectPostMode
         *Depending on the EA Register, output a different register number
-        
+        JSR     WrapperAddrIndirectPost
 
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
+        *need to read some flag, if this was called from a source EA decoding then jmp to 
+        *some wrapper (i'll define later)
+        
+        *else this was a destination EA decoding, we can just go get the next instruction
+        *since there is no more decoding to do for the current instruction
+        JMP     GRAB_NEXT_OP
 
 AddrIndirectPreMode
         *Depending on the EA Register, output a different register number
+        JSR     WrapperAddrIndirectPre
 
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
+        *need to read some flag, if this was called from a source EA decoding then jmp to 
+        *some wrapper (i'll define later)
+        
+        *else this was a destination EA decoding, we can just go get the next instruction
+        *since there is no more decoding to do for the current instruction
+        JMP     GRAB_NEXT_OP
 
 AddrAbsoluteMode
         *Depending on the EA Register, output a different register number
+        JSR     WrapperAddrAbsolute        
 
-        *READ IN THE NEXT WORD ADDRESS OR LONG ADDRESS, DEPENDING ON EA REGISTER, ALSO OUTPUT
-
-        *Nothing else to do here, should maybe go straight to next instruction and not back
-        *to the EA_ADDI portion?
+        *need to read some flag, if this was called from a source EA decoding then jmp to 
+        *some wrapper (i'll define later)
+        
+        *else this was a destination EA decoding, we can just go get the next instruction
+        *since there is no more decoding to do for the current instruction
+        JMP     GRAB_NEXT_OP
         
 ImmediateDataMode
         *some code      
@@ -518,6 +540,7 @@ ImmediateDataMode
 *-----------------------------------------------------------     
 *'Wrapper' func used for outputing the correct register. Used to do the nasty branching
 WrapperDataReg
+        *Depending on the EA Register, output a different register number
         CMP.B   #$00,D3
         BEQ     DataReg0
         
@@ -547,7 +570,7 @@ WrapperDataRegEnd
         RTS
 
 DataReg0
-        *Output some message, EA mode is data register 0...
+        *Output the specific data register...
         LEA     OutDataReg0,A1  *Loads DataReg0 into address register A1
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message   
@@ -605,7 +628,7 @@ DataReg7
 
 
 *-----------------------------------------------------------        
-* Output logic for all Address Indirec Registers (0-7)
+* Output logic for all Address Indirect Registers (0-7)
 *-----------------------------------------------------------     
 *'Wrapper' func used for outputing the correct register. Used to do the nasty branching
 WrapperAddrIndirect
@@ -639,7 +662,7 @@ WrapperAddrIndirectEnd
         RTS        
 
 AddrIndReg0
-        *Output some message, EA mode is address indirect 0...
+        *Output the specific address indirect register...
         LEA     OutAddrIndReg0,A1   *Loads AddrIndReg0 into address register A1
         MOVE.B  #14,D0              *Moves the number 14 into data register D0
         TRAP    #15                 *Displays Message        
@@ -694,6 +717,234 @@ AddrIndReg7
         TRAP    #15
         
         JMP     WrapperAddrIndirectEnd
+        
+        
+*-----------------------------------------------------------        
+* Output logic for all Address Indirect Post Increment Registers (0-7)
+*-----------------------------------------------------------     
+*'Wrapper' func used for outputing the correct register. Used to do the nasty branching
+WrapperAddrIndirectPost
+        *Depending on the EA Register, output a different register number
+        CMP.B   #$00,D3
+        BEQ     AddrIndPoReg0
+        
+        CMP.B   #$01,D3
+        BEQ     AddrIndPoReg1
+        
+        CMP.B   #$02,D3
+        BEQ     AddrIndPoReg2
+        
+        CMP.B   #$03,D3
+        BEQ     AddrIndPoReg3
+        
+        CMP.B   #$04,D3
+        BEQ     AddrIndPoReg4
+        
+        CMP.B   #$05,D3
+        BEQ     AddrIndPoReg5
+        
+        CMP.B   #$06,D3
+        BEQ     AddrIndPoReg6
+        
+        CMP.B   #$07,D3
+        BEQ     AddrIndPoReg7
+
+*Used to get back to 'AddrIndirectPostMode', after dealing with the specific register
+WrapperAddrIndirectPostEnd
+        RTS        
+
+AddrIndPoReg0
+        *Output the specific address indirect post register...
+        LEA     OutAddrIndPoReg0,A1 *Loads AddrIndPoReg0 into address register A1
+        MOVE.B  #14,D0              *Moves the number 14 into data register D0
+        TRAP    #15                 *Displays Message        
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg1
+        LEA     OutAddrIndPoReg1,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg2
+        LEA     OutAddrIndPoReg2,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg3
+        LEA     OutAddrIndPoReg3,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg4
+        LEA     OutAddrIndPoReg4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg5
+        LEA     OutAddrIndPoReg5,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg6
+        LEA     OutAddrIndPoReg6,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+AddrIndPoReg7
+        LEA     OutAddrIndPoReg7,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPostEnd
+
+
+*-----------------------------------------------------------        
+* Output logic for all Address Indirect Pre Decrement Registers (0-7)
+*-----------------------------------------------------------     
+*'Wrapper' func used for outputing the correct register. Used to do the nasty branching
+WrapperAddrIndirectPre
+        *Depending on the EA Register, output a different register number
+        CMP.B   #$00,D3
+        BEQ     AddrIndPrReg0
+        
+        CMP.B   #$01,D3
+        BEQ     AddrIndPrReg1
+        
+        CMP.B   #$02,D3
+        BEQ     AddrIndPrReg2
+        
+        CMP.B   #$03,D3
+        BEQ     AddrIndPrReg3
+        
+        CMP.B   #$04,D3
+        BEQ     AddrIndPrReg4
+        
+        CMP.B   #$05,D3
+        BEQ     AddrIndPrReg5
+        
+        CMP.B   #$06,D3
+        BEQ     AddrIndPrReg6
+        
+        CMP.B   #$07,D3
+        BEQ     AddrIndPrReg7
+
+*Used to get back to 'AddrIndirectPreMode', after dealing with the specific register
+WrapperAddrIndirectPreEnd
+        RTS        
+
+AddrIndPrReg0
+        *Output the specific address indirect post register...
+        LEA     OutAddrIndPrReg0,A1 *Loads AddrIndPrReg0 into address register A1
+        MOVE.B  #14,D0              *Moves the number 14 into data register D0
+        TRAP    #15                 *Displays Message        
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg1
+        LEA     OutAddrIndPrReg1,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg2
+        LEA     OutAddrIndPrReg2,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg3
+        LEA     OutAddrIndPrReg3,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg4
+        LEA     OutAddrIndPrReg4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg5
+        LEA     OutAddrIndPrReg5,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg6
+        LEA     OutAddrIndPrReg6,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+AddrIndPrReg7
+        LEA     OutAddrIndPrReg7,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrIndirectPreEnd
+
+
+*-----------------------------------------------------------        
+* Output logic for absolute memory addressing (0-7)
+*-----------------------------------------------------------     
+*'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
+WrapperAddrAbsolute
+        CLR.L   D5
+        *Depending on the EA Register, choose which size to decode
+        CMP.B   #$00,D3
+        BEQ     WordSizeAbsolute
+
+        CMP.B   #$01,D3
+        BEQ     LongSizeAbsolute
+        
+*Used to get back to 'AddrAbsoluteMode', after dealing with the specific register
+WrapperAddrAbsoluteEnd
+        RTS
+
+WordSizeAbsolute        
+        MOVE.W  (A0)+,D5    *read in next word, data is that word
+        
+        *Probably need to output like 4 spaces here..., then output the value
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D5)?
+        *Output some message, the abosolute mem address is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+        
+        JMP     WrapperAddrAbsoluteEnd
+
+LongSizeAbsolute
+        MOVE.L  (A0)+,D5    *read in next long, data is that long
+        
+        *Probably need to output like 4 spaces here..., then output the value
+        
+        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D5)?
+        *Output some message, the abosolute mem address is...
+        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
+        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        *TRAP    #15         *Displays Message
+
+        JMP     WrapperAddrAbsoluteEnd
 
 
 *-----------------------------------------------------------        
@@ -810,6 +1061,26 @@ OutAddrIndReg4  DC.B    ',(A4)',CR,LF,0
 OutAddrIndReg5  DC.B    ',(A5)',CR,LF,0
 OutAddrIndReg6  DC.B    ',(A6)',CR,LF,0
 OutAddrIndReg7  DC.B    ',(A7)',CR,LF,0
+
+*output for all address indirect post registers (0-7)
+OutAddrIndPoReg0    DC.B    ',(A0)',CR,LF,0
+OutAddrIndPoReg1    DC.B    ',(A1)',CR,LF,0
+OutAddrIndPoReg2    DC.B    ',(A2)',CR,LF,0
+OutAddrIndPoReg3    DC.B    ',(A3)',CR,LF,0
+OutAddrIndPoReg4    DC.B    ',(A4)',CR,LF,0
+OutAddrIndPoReg5    DC.B    ',(A5)',CR,LF,0
+OutAddrIndPoReg6    DC.B    ',(A6)',CR,LF,0
+OutAddrIndPoReg7    DC.B    ',(A7)',CR,LF,0
+
+*output for all address indirect pre registers (0-7)
+OutAddrIndPrReg0    DC.B    ',(A0)',CR,LF,0
+OutAddrIndPrReg1    DC.B    ',(A1)',CR,LF,0
+OutAddrIndPrReg2    DC.B    ',(A2)',CR,LF,0
+OutAddrIndPrReg3    DC.B    ',(A3)',CR,LF,0
+OutAddrIndPrReg4    DC.B    ',(A4)',CR,LF,0
+OutAddrIndPrReg5    DC.B    ',(A5)',CR,LF,0
+OutAddrIndPrReg6    DC.B    ',(A6)',CR,LF,0
+OutAddrIndPrReg7    DC.B    ',(A7)',CR,LF,0
 
 *current output for error messages
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
