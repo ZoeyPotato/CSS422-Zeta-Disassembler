@@ -25,39 +25,10 @@ loop_1     	MOVE	#0,D0
         	TRAP	#15    
         	MOVE	#2,D0
         	LEA		CMD_HLD,A1	*Store the command in a buffer
-           	*TRAP	#15
+           	TRAP	#15
+           	CMPI.B	#01,D1
+           	BNE		INVALID1
         	BRA		CHECK_UPY
-
-*-----------------------------------------------------------
-* I/O: Input check for Y, y, N, n
-*-----------------------------------------------------------
-CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
-			BNE		CHECK_LOWy
-			BEQ		NXT_CMD
-			
-CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
-			BNE		CHECK_UPN
-			BEQ		NXT_CMD
-			
-CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
-			BEQ		DONE
-			BNE		CHECK_LOWn
-			
-CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
-			BNE		INVALID1
-			BEQ		DONE
-			
-INVALID1	MOVE	#0,D0		*Prints invalid command msg if not found
-			LEA		INV_MSG,A1
-			MOVE	#14,D0
-			TRAP	#15
-			*JMP		loop_1
-			
-INV_STRT1	LEA		INVSTRTMSG,A1
-			MOVE.B	#14,D0
-			TRAP	#15
-			JMP		NXT_CMD		
-
 *-----------------------------------------------------------
 *
 * I/O: Check Start Address
@@ -67,19 +38,134 @@ INV_STRT1	LEA		INVSTRTMSG,A1
 * saying that requested address is invalid & prompts the
 * user again for the starting address.
 *-----------------------------------------------------------
-NXT_CMD 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
+GET_STRT 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
 			MOVE.B	#14,D0
 			TRAP	#15
-			LEA		CMD_HLD,A1	*Need to change where it can hold the start/end address
+			LEA		STADDR,A1	*Need to change where it can hold the start/end address
+			MOVE.W	STADDRSZ,D1	*Store the size in a buffer
 			MOVE	#2,D0			*Get start address
-        	*TRAP	#15
-        	MOVE.L	(A1),D4
-        	*JSR		CHECKSTRT1
-CHECKSTRT1	CMPI.L	#08,D1		*Check if size 
+        	TRAP	#15
+        	JSR		CHECKSTRT1
+        	CLR.L	D7
+        	JSR		ASCIIHEX	*Convert ASCII to Hex if all's ok
+        	CMPI.B	#01,D3		*Check if there was a bad start
+        	BEQ		INV_STRT1	*Prints error message if there was a bad start
+        	CMPI.L	#ST_ADDR,D7	*Checks the minimum start address for D7
+        	BLT		INV_STRT1	*Asks for another start address if invalid
+        	CMPI.L	#$00FFFFFE,D7	*Checks if it goes beyond the possible end address
+        	BGE		INV_STRT1
+        	MOVE.L	D7,PROGST
+
+GET_END		LEA		GETENDADDR,A1	*Command prompt for end address
+			MOVE.B	#14,D0
+			TRAP	#15
+			LEA		ENDADDR,A1		*Buffer to hold end address
+			MOVE.W	ENDADDRSZ,D1	*Buffer to hold size of end address
+			MOVE	#2,D0
+			TRAP	#15
+			JSR		CHECKEND1
+			CLR.L	D7
+			JSR		ASCIIHEX
+			CMPI.B	#01,D3
+			BEQ		INV_END1
+			CMPI.L	#PROGST,D7
+			BLT		INV_END1
+			CMPI.L	#$00FFFFFF,D7
+			BGE		INV_END1
+			MOVEA.L	PROGST,A0			
+        	        	
+CHECKSTRT1	CMPI.L	#08,D1		*Check if size falls within range
 			BGT		INV_STRT1
 			CMPI.L	#00,D1
-			*BLS		INV_STRT1
-			*RTS			
+			BLS		INV_STRT1
+			RTS			
+			
+CHECKEND1	CMPI.L	#08,D1
+			BGT		INV_END1
+			CMPI.L	#00,D1
+			BLS		INV_END1
+			RTS
+
+*-----------------------------------------------------------
+* I/O: Input check for Y, y, N, n
+*-----------------------------------------------------------
+CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
+			BEQ		GET_STRT
+			
+CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
+			BEQ		GET_STRT
+			
+CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
+			BEQ		DONE
+			
+CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
+			BEQ		DONE
+			
+INVALID1	MOVE.B	#0,D3		*Reset bad flag
+			MOVE	#0,D0		*Prints invalid command msg if not found
+			LEA		INV_MSG,A1
+			MOVE	#14,D0
+			TRAP	#15
+			BRA		loop_1
+			
+INV_STRT1	LEA		INVSTRTMSG,A1
+			MOVE.B	#14,D0
+			TRAP	#15
+			MOVE.B	#00,D3		*Reset flag
+			BRA		GET_STRT		
+			
+INV_END1	LEA		INVENDMSG,A1
+			MOVE.B	#14,D0
+			TRAP	#15
+			MOVE.B	#00,D3		*Reset flag
+			BRA		GET_END
+			
+*-----------------------------------------------------------
+* ASCII to Hex converter
+*
+* Checks and converts the ASCII value to the hex equivalent
+*-----------------------------------------------------------
+ASCIIHEX	MOVEM.L	D1/D2,-(SP)	*Free up and store the values in the stack
+ASCIIHEX1	CMPI.B	#00,D1		*See if done
+			BEQ		exitSub		*Exit subroutine 
+			SUBI.B	#01,D1		*Keep track of how many chars we need to go through
+			ROL.L	#4,D7		*Keep shifting to add the next appropriate hex for the full addr
+			MOVE.B	(A1)+,D2	*Takes the first char
+			CMPI.B	#$24,D2		*See if the first char is $
+			BEQ		ASCIIHEX1	*Loop through to get the next char if first is $
+			CMPI.B	#$30,D2		*See if the char is less than the hex value for '0'
+			BLT		st_bad		*Put error message
+			CMPI.B	#$39,D2		*Checks if char value is between 0 and 9's hex value
+			BLE		CONV_NUM	*Convert to number, if so
+			CMPI.B	#$41,D2		*Checks if char value is not a number or letter (A-F)
+			BLT		st_bad		*Put error message
+			CMPI.B	#$46,D2		*Checks if char value is an uppercase letter between A and F
+			BLE		CONV_UpL	*Convert to hex
+			CMPI.B	#$61,D2		*Checks for non-valid chars
+			BLT		st_bad
+			CMPI.B	#$66,D2		*Checks for lowercase chars of (a-f)
+			BLE		CONV_LoL	
+			BGT		st_bad		*Puts error message for anything greater than f value
+			
+CONV_NUM	SUBI.B	#$30,D2
+			OR.B	D2,D7
+			JMP		ASCIIHEX1
+CONV_UpL	SUBI.B	#$37,D2		*Put it in a range of 10-15
+			OR.B	D2,D7
+			JMP		ASCIIHEX1
+CONV_LoL	SUBI.B	#$57,D2
+			OR.B	D2,D7
+			JMP		ASCIIHEX1	
+
+st_bad		ADDI.B	#01,D3
+exitSub		MOVEM.L	(SP)+,D1/D2	*Pop back data back to the respective registers
+			RTS
+			
+*-----------------------------------------------------------
+* Hex to ASCII converter
+*-----------------------------------------------------------
+HEXASCII	
+
 
 *-----------------------------------------------------------        
 * Start of Disassembler
@@ -1025,8 +1111,10 @@ CMD_HLD		DS.B	30
 CMD_SZ		DS.B	30
 STADDR		DS.B	10
 STADDRSZ	DS.B	10
+PROGST		DS.L	1
 ENDADDR		DS.B	10
 ENDADDRSZ	DS.B	10
+PROGEND		DS.L	1
 *****************************************************
 
 *output for all OPCODEs
@@ -1087,9 +1175,12 @@ BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
 BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
 INV_MSG		DC.B	'Improper command.',CR,LF,0
 INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
+INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
+
         
         END     START
         
+
 
 *~Font name~Courier New~
 *~Font size~10~
