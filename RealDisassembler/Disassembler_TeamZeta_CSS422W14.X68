@@ -75,8 +75,7 @@ GET_END		LEA		GETENDADDR,A1	*Command prompt for end address
 			CMPI.L	#$00FFFFFF,D7
 			BGE		INV_END1
 			MOVE.L	D7,PROGEND
-			MOVEA.L	PROGST,A0
-			BRA		GRAB_NEXT_OP			
+			BRA		PL_STADDR			
         	        	
 CHECKSTRT1	CMPI.L	#08,D1		*Check if size falls within range
 			BGT		INV_STRT1
@@ -280,11 +279,13 @@ NUM_F		LEA		PRNTF,A1
 * Start of Disassembler
 *-----------------------------------------------------------
         *FOR DEBUGGING ONLY!!!
-        MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
+*        MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
+PL_STADDR	MOVEA.L	PROGST,A0
         
 GRAB_NEXT_OP
-        MOVE.L	A0,D7		
-        CMPI.L	#PROGEND,D7  *Check and see if A0 == end of test address. 
+		MOVE.L	A0,D7
+		MOVEA.L	PROGEND,A2
+        CMP.L	A2,D7  		* Check and see if A0 == end of test address. 
         BGE		loop_1		* Ask user if they want to do the disassembler again
         CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
@@ -1596,6 +1597,8 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
+
 
 
 
