@@ -316,8 +316,7 @@ GRAB_NEXT_OP
         LSR.W   #$04,D0
         *Now try to figure out what OP CODE this is using these 4 bits. Run down the
         *list of buckets until we find which one this instruction falls into.
-        JSR		BUCKET_0000		* Start with 0000
-        BRA		GRAB_NEXT_OP	* Loop back
+        BRA		BUCKET_0000		* Start with 0000
 
 *-----------------------------------------------------------        
 * Question Prompts
@@ -1597,6 +1596,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 
