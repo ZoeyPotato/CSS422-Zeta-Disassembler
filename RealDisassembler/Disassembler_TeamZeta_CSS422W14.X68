@@ -608,7 +608,7 @@ EA_EORI
 
 
 *Found a possible BCHG(dynamic) instruction. Verify its bit integrity and then set
-* everything up for EA if is a legit instruction.
+*everything up for EA, if is a legit instruction.
 IS_BCHG_D
         *Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
         *invalid, branch to BADOPCODE
@@ -687,7 +687,8 @@ EA_BCHG_D
         JMP     BADEACODE
 
 
-*Now we know this instruction is exactly BCHG(static), lets set everything up for EA.
+*Found a possible BCHG(static) instruction. Verify its bit integrity and then set up
+*everything up for EA, if is a legit instruction.
 IS_BCHG_S
 		*Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
         *invalid, branch to BADOPCODE
