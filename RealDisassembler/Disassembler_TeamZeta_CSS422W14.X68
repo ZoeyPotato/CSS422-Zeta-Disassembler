@@ -6,7 +6,7 @@
 * This program disassembles a subset of 68k assembly instructions. 
 * ***visit this later, describe what it does, how to use it, assumptions, etc.
 *-------------------------------------------------------------
-ST_ADDR 	EQU $7FC0   *Starting address of input test file
+ST_ADDR 	EQU $7FC6   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
 START   	ORG $1000   *Start program at provided location	
 			LEA	stack,SP
@@ -184,8 +184,9 @@ CHNG_SZW	MOVE.B	#4,D1			* Set size to 4
 CONV_LOOP	CMPI.B	#00,D1
 			BEQ		EXIT_CONV
 			SUBI.B	#01,D1
-			MOVE.L	D4,D5			* Keep a copy of hex values in D4
-			ROR.B	#4,D4			* Shift it for next bit
+			ROL.B   #4,D4           * Shift it for next bit
+			MOVE.L	D4,D5			* Keep a copy of hex values in D5
+			*ROR.B	#4,D4			* Shift it for next bit
 			ANDI.L	#$0000000F,D5	* Grab only the last bit in D5
 			CMPI.B	#$0,D5
 			BEQ		NUM_0
@@ -560,10 +561,10 @@ EA_BCHG_D
 IS_BCHG_S
 		*TODO:Verify bits
 
-		*Output 'BCHG_S' to console...
-        LEA     BCHG_S,A1    *Loads FNDBCHG_S into address register A1
-        MOVE.B  #14,D0          *Moves the number 14 into data register D0
-        TRAP    #15             *Displays Message
+		*Output 'BCHG' to console...
+        LEA     BCHG,A1 *Loads FNDBCHG_S into address register A1
+        MOVE.B  #14,D0  *Moves the number 14 into data register D0
+        TRAP    #15     *Displays Message
         
         *Should have a valid BCHG_S op code. Set data up for EA.
         *TODO:
@@ -759,10 +760,8 @@ ByteSizeImmediate
         MOVE.B  #14,D0
         TRAP    #15  
         
-        *go to teresia's thing        
-        *MOVE.L  (A2)+,A1
-        *MOVE.B #14,D0
-        *TRAP   #15
+        *output the immediate data to console with the hex-ascii converter
+        JSR     HEXASCII
                 
         JMP     WrapperSizeImmediateEnd
                 
@@ -779,10 +778,8 @@ WordSizeImmediate
         MOVE.B  #14,D0
         TRAP    #15  
         
-        *go to teresia's thing        
-        *MOVE.L  (A2)+,A1
-        *MOVE.B #14,D0
-        *TRAP   #15
+        *output the immediate data to console with the hex-ascii converter
+        JSR     HEXASCII
         
         JMP     WrapperSizeImmediateEnd
                 
@@ -799,10 +796,8 @@ LongSizeImmediate
         MOVE.B  #14,D0
         TRAP    #15  
         
-        *go to teresia's thing        
-        *MOVE.L  (A2)+,A1
-        *MOVE.B #14,D0
-        *TRAP   #15
+        *output the immediate data to console with the hex-ascii converter
+        JSR     HEXASCII
         
         JMP     WrapperSizeImmediateEnd
 
@@ -1259,16 +1254,14 @@ WrapperAddrAbsoluteEnd
 
 WordSizeAbsolute        
         MOVE.W  (A0)+,D4    *read in next word, data is that word
-        
+            
         *Output ',$' just after source operand
         LEA     Bang,A1
         MOVE.B  #14,D0
         TRAP    #15
-        
-        *go to teresia's thing
-        *MOVE.L  (A2)+,A1
-        *MOVE.B #14,D0
-        *TRAP   #15
+            
+        *output the absolute mem address to console with the hex-ascii converter
+        JSR     HEXASCII
         
         *Print a new line, since this should be the last piece of data for an instruction
         LEA     NewLine,A1
@@ -1285,10 +1278,8 @@ LongSizeAbsolute
         MOVE.B  #14,D0
         TRAP    #15  
         
-        *go to teresia's thing        
-        *MOVE.L  (A2)+,A1
-        *MOVE.B #14,D0
-        *TRAP   #15
+        *output the absolute mem address to console with the hex-ascii converter
+        JSR     HEXASCII
         
         *Print a new line, since this should be the last piece of data for an instruction
         LEA     NewLine,A1
@@ -1469,6 +1460,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 
