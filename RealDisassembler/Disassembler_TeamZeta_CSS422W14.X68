@@ -392,6 +392,11 @@ EA_ADDI
         *output the size of the operation and the immediate data to console
         JSR     WrapperSizeImmediate
         
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message        
+        
         *Determine which EA mode and thus Register/Mem Address this instruction used
         CMP.B   #$00,D2
         BEQ     DataRegMode *If EA mode is a data register, output that
@@ -452,6 +457,11 @@ EA_ANDI
         *Determine how much data to read in, depending on the size of the operation
         *output the size of the operation and the immediate data to console
         JSR     WrapperSizeImmediate
+        
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message        
         
         *Determine which EA mode and thus Register/Mem Address this instruction used
         CMP.B   #$00,D2
@@ -514,6 +524,11 @@ EA_EORI
         *output the size of the operation and the immediate data to console
         JSR     WrapperSizeImmediate
         
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message        
+        
         *Determine which EA mode and thus Register/Mem Address this instruction used
         CMP.B   #$00,D2
         BEQ     DataRegMode *If EA mode is a data register, output that
@@ -553,21 +568,57 @@ IS_BCHG_D
                 
         *Should have a valid BCHG op code. Set data up for EA.
 
-*        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
-*        CLR.L   D2
-*        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-*        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
-*        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
-*                
-*        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
-*        CLR.L   D3
-*        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
-*        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+        *Set D1 to the EA source register located in bits 11-9 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$0E00,D1   *Mask out everything but the EA source register bits
+        LSR.B   #$08,D1     *Shift the EA source register bits into LSB
+        LSR.B   #$01,D1
+
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
 
         JMP     EA_BCHG_D
 
 EA_BCHG_D
-        JMP     THEEND  *For now just end
+        *Decode the ea bits of BCHG(dynamic). Assuming D1 holds the source register, 
+        *D2 holds the EA mode, and D3 holds the EA register.
+        
+        *output the source register to console, flag D6 with a 1 so we come back...
+        MOVE.B  #$01,D6
+        JSR     DataRegMode
+        
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *Now we know this instruction is exactly BCHG(static), lets set everything up for EA.
@@ -628,6 +679,11 @@ EA_CMPI
         *Determine how much data to read in, depending on the size of the operation
         *output the size of the operation and the immediate data to console
         JSR     WrapperSizeImmediate
+        
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
         
         *Determine which EA mode and thus Register/Mem Address this instruction used
         CMP.B   #$00,D2
@@ -820,14 +876,15 @@ LongSizeImmediate
 *-----------------------------------------------------------        
 DataRegMode
         *Depending on the EA Register, output a different register number
-        JSR     WrapperDataReg
+        JSR     WrapperDataReg        
         
-        *need to read some flag, if this was called from a source EA decoding then jmp to 
-        *some wrapper (i'll define later)
+        *if this was called for a destination decoding then we are done decoding this        
+        *instruction, go get the next instruction
+        CMP.B   #$01,D6
+        BNE     GRAB_NEXT_OP
         
-        *else this was a destination EA decoding, we can just go get the next instruction
-        *since there is no more decoding to do for the current instruction
-        JMP     GRAB_NEXT_OP
+        *else this was a source decoding, rts back to we can keep decoding
+        RTS
 
 AddrDirectMode
         *some code...
@@ -836,12 +893,13 @@ AddrIndirectMode
         *Depending on the EA Register, output a different register number
         JSR     WrapperAddrIndirect
                         
-        *need to read some flag, if this was called from a source EA decoding then jmp to 
-        *some wrapper (i'll define later)
+        *if this was called for a destination decoding then we are done decoding this        
+        *instruction, go get the next instruction
+        CMP.B   #$01,D6
+        BNE     GRAB_NEXT_OP
         
-        *else this was a destination EA decoding, we can just go get the next instruction
-        *since there is no more decoding to do for the current instruction
-        JMP     GRAB_NEXT_OP
+        *else this was a source decoding, rts back to we can keep decoding
+        RTS
 
 AddrIndirectPostMode
         *Depending on the EA Register, output a different register number
@@ -877,15 +935,15 @@ AddrAbsoluteMode
         JMP     GRAB_NEXT_OP
         
 ImmediateDataMode
-        *some code      
-
-
+        *some code        
+        
+        
 *-----------------------------------------------------------        
 * Output logic for all Data Registers (0-7)
-*-----------------------------------------------------------     
+*-----------------------------------------------------------
 *'Wrapper' func used for outputing the correct register. Used to do the nasty branching
 WrapperDataReg
-        *Depending on the EA Register, output a different register number
+        *Depending on the EA destination register, output a different register number
         CMP.B   #$00,D3
         BEQ     DataReg0
         
@@ -916,7 +974,7 @@ WrapperDataRegEnd
 
 DataReg0
         *Output the specific data register...
-        LEA     OutDataReg0,A1  *Loads DataReg0 into address register A1
+        LEA     OutDataReg0,A1  *Loads OutDataReg0 into address register A1
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message   
         
@@ -1267,6 +1325,10 @@ WrapperAddrAbsoluteEnd
 
 WordSizeAbsolute        
         MOVE.W  (A0)+,D4    *read in next word, data is that word
+        
+        *Move #$01 into D1 to specify this as a word, used for hextoascii conversion...
+        CLR.L   D1
+        MOVE.B  #$01,D1     
             
         *Output ',$' just after source operand
         LEA     Bang,A1
@@ -1285,6 +1347,10 @@ WordSizeAbsolute
 
 LongSizeAbsolute
         MOVE.L  (A0)+,D4    *read in next long, data is that long
+                
+        *Move #$10 into D1 to specify this as a long, used for hextoascii conversion...
+        CLR.L   D1
+        MOVE.B  #$10,D1
                 
         *Output ',$' just after source operand
         LEA     Bang,A1
@@ -1416,52 +1482,55 @@ ByteSize    DC.B    '.B    ',0
 WordSize    DC.B    '.W    ',0
 LongSize    DC.B    '.L    ',0
 
-*output for all data registers (0-7)
-OutDataReg0 DC.B    ',D0',CR,LF,0
-OutDataReg1 DC.B    ',D1',CR,LF,0
-OutDataReg2 DC.B    ',D2',CR,LF,0
-OutDataReg3 DC.B    ',D3',CR,LF,0
-OutDataReg4 DC.B    ',D4',CR,LF,0
-OutDataReg5 DC.B    ',D5',CR,LF,0
-OutDataReg6 DC.B    ',D6',CR,LF,0
-OutDataReg7 DC.B    ',D7',CR,LF,0
+*output for all destination data registers (0-7)
+OutDataReg0 DC.B    'D0',CR,LF,0
+OutDataReg1 DC.B    'D1',CR,LF,0
+OutDataReg2 DC.B    'D2',CR,LF,0
+OutDataReg3 DC.B    'D3',CR,LF,0
+OutDataReg4 DC.B    'D4',CR,LF,0
+OutDataReg5 DC.B    'D5',CR,LF,0
+OutDataReg6 DC.B    'D6',CR,LF,0
+OutDataReg7 DC.B    'D7',CR,LF,0
 
 *output for all address indirect registers (0-7)
-OutAddrIndReg0  DC.B    ',(A0)',CR,LF,0
-OutAddrIndReg1  DC.B    ',(A1)',CR,LF,0
-OutAddrIndReg2  DC.B    ',(A2)',CR,LF,0
-OutAddrIndReg3  DC.B    ',(A3)',CR,LF,0
-OutAddrIndReg4  DC.B    ',(A4)',CR,LF,0
-OutAddrIndReg5  DC.B    ',(A5)',CR,LF,0
-OutAddrIndReg6  DC.B    ',(A6)',CR,LF,0
-OutAddrIndReg7  DC.B    ',(A7)',CR,LF,0
+OutAddrIndReg0  DC.B    '(A0)',CR,LF,0
+OutAddrIndReg1  DC.B    '(A1)',CR,LF,0
+OutAddrIndReg2  DC.B    '(A2)',CR,LF,0
+OutAddrIndReg3  DC.B    '(A3)',CR,LF,0
+OutAddrIndReg4  DC.B    '(A4)',CR,LF,0
+OutAddrIndReg5  DC.B    '(A5)',CR,LF,0
+OutAddrIndReg6  DC.B    '(A6)',CR,LF,0
+OutAddrIndReg7  DC.B    '(A7)',CR,LF,0
 
 *output for all address indirect post registers (0-7)
-OutAddrIndPoReg0    DC.B    ',(A0)+',CR,LF,0
-OutAddrIndPoReg1    DC.B    ',(A1)+',CR,LF,0
-OutAddrIndPoReg2    DC.B    ',(A2)+',CR,LF,0
-OutAddrIndPoReg3    DC.B    ',(A3)+',CR,LF,0
-OutAddrIndPoReg4    DC.B    ',(A4)+',CR,LF,0
-OutAddrIndPoReg5    DC.B    ',(A5)+',CR,LF,0
-OutAddrIndPoReg6    DC.B    ',(A6)+',CR,LF,0
-OutAddrIndPoReg7    DC.B    ',(A7)+',CR,LF,0
+OutAddrIndPoReg0    DC.B    '(A0)+',CR,LF,0
+OutAddrIndPoReg1    DC.B    '(A1)+',CR,LF,0
+OutAddrIndPoReg2    DC.B    '(A2)+',CR,LF,0
+OutAddrIndPoReg3    DC.B    '(A3)+',CR,LF,0
+OutAddrIndPoReg4    DC.B    '(A4)+',CR,LF,0
+OutAddrIndPoReg5    DC.B    '(A5)+',CR,LF,0
+OutAddrIndPoReg6    DC.B    '(A6)+',CR,LF,0
+OutAddrIndPoReg7    DC.B    '(A7)+',CR,LF,0
 
 *output for all address indirect pre registers (0-7)
-OutAddrIndPrReg0    DC.B    ',-(A0)',CR,LF,0
-OutAddrIndPrReg1    DC.B    ',-(A1)',CR,LF,0
-OutAddrIndPrReg2    DC.B    ',-(A2)',CR,LF,0
-OutAddrIndPrReg3    DC.B    ',-(A3)',CR,LF,0
-OutAddrIndPrReg4    DC.B    ',-(A4)',CR,LF,0
-OutAddrIndPrReg5    DC.B    ',-(A5)',CR,LF,0
-OutAddrIndPrReg6    DC.B    ',-(A6)',CR,LF,0
-OutAddrIndPrReg7    DC.B    ',-(A7)',CR,LF,0
+OutAddrIndPrReg0    DC.B    '-(A0)',CR,LF,0
+OutAddrIndPrReg1    DC.B    '-(A1)',CR,LF,0
+OutAddrIndPrReg2    DC.B    '-(A2)',CR,LF,0
+OutAddrIndPrReg3    DC.B    '-(A3)',CR,LF,0
+OutAddrIndPrReg4    DC.B    '-(A4)',CR,LF,0
+OutAddrIndPrReg5    DC.B    '-(A5)',CR,LF,0
+OutAddrIndPrReg6    DC.B    '-(A6)',CR,LF,0
+OutAddrIndPrReg7    DC.B    '-(A7)',CR,LF,0
+
+*output for a comma only
+Comma   DC.B    ',',0
 
 *output for a new line only
 NewLine DC.B    CR,LF,0
 
-*output for a '#$' and ',$' only
+*output for a '#$' and '$' only
 ShaBang DC.B    '#$',0
-Bang    DC.B    ',$',0
+Bang    DC.B    '$',0
 
 *current output for error messages
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
