@@ -280,9 +280,17 @@ NUM_F		LEA		PRNTF,A1
         MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
         
 GRAB_NEXT_OP
-        *Need a check here to see if A0 == end of test address
-        *if so, go to end.
+        *Check and see if A0 == end of test address. If so, go to end of program.
+        *some code...
         
+        *Output the address of this instruction to console...
+        MOVE.L  A0,D4
+        JSR     HEXASCIIREG
+        
+        *Output a tab (4 spaces) to console, just after the address...
+        LEA     Tab,A1  *Loads Tab into address register A1
+        MOVE.B  #14,D0  *Moves the number 14 into data register D0
+        TRAP    #15     *Displays Message
         
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
         *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
@@ -593,8 +601,10 @@ EA_BCHG_D
         *D2 holds the EA mode, and D3 holds the EA register.
         
         *output the source register to console, flag D6 with a 1 so we come back...
+        MOVEM.L  D6,-(SP)   *Push current contents of D6 into stack (line counter)
         MOVE.B  #$01,D6
         JSR     DataRegMode
+        MOVEM.L (SP)+,D6    *Pull current contents of stack back into D6
         
         *manually output a comma here...
         LEA     Comma,A1        *Loads Comma into address register A1
@@ -1522,6 +1532,9 @@ OutAddrIndPrReg5    DC.B    '-(A5)',CR,LF,0
 OutAddrIndPrReg6    DC.B    '-(A6)',CR,LF,0
 OutAddrIndPrReg7    DC.B    '-(A7)',CR,LF,0
 
+*output for a tab only (4 spaces)
+Tab DC.B    '    ',0
+
 *output for a comma only
 Comma   DC.B    ',',0
 
@@ -1533,8 +1546,8 @@ ShaBang DC.B    '#$',0
 Bang    DC.B    '$',0
 
 *current output for error messages
-BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
-BADOPMSG    DC.B    'BAD OP CODE, WHY?!',CR,LF,0
+BADEAMSG    DC.B    'BAD EA',CR,LF,0
+BADOPMSG    DC.B    'BAD OP',CR,LF,0
 INV_MSG		DC.B	'Improper command.',CR,LF,0
 INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
 INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
@@ -1542,6 +1555,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 
