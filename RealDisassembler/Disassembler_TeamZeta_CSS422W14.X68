@@ -176,7 +176,8 @@ START   	ORG $1000   *Start program at provided location
 GRAB_NEXT_OP
         *Need a check here to see if A0 == end of test address
         *if so, go to end.
-
+        
+        
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
         *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
         *data that may be associated with the instruction.
@@ -242,12 +243,13 @@ BUCKET0000_BITS EQU $0
         *then this instruction is either not in our list of OP CODES to decode, or is an
         *invalid instruction/syntax.
         JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
-
-
+        
+        
 *Now we know this instruction is exactly ADDI, lets set everything up for EA.
 IS_ADDI
         *Verify the size of this operation. If incorrect size (%11), then bad opcode!
-        *Set D0 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        *Set D1 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        CLR.L   D1
         MOVE.W  D7,D1       *Move the WHOLE instruction to D1
         AND.W   #$00C0,D1   *Mask out everything but the size bits
         LSR.B   #$06,D1     *Shift the size bits into LSB
@@ -256,19 +258,21 @@ IS_ADDI
         BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
         
         *Output 'ADDI' to console...
-        LEA     ADDI,A1  *Loads FNDADDI into address register A1
+        LEA     ADDI,A1     *Loads ADDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
         
         *Should have a valid ADDI op code. Set data up for EA.
-         
-        *Set D1 to the EA mode of the operation located in bits 5-3 of the instruction
+        
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
         AND.W   #$003C,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
         MOVE.W  D7,D3       *Move the WHOLE instruction to D3
         AND.W   #$0007,D3   *Mask out everything but the EA register bits
         
@@ -300,24 +304,67 @@ EA_ADDI
         
         *If the ea mode isn't equal to any of these, it is an invalid EA
         JMP     BADEACODE                               
-
+        
 
 *Now we know this instruction is exactly ANDI, lets set everything up for EA.
 IS_ANDI
-        *TODO:Verify bits
-
+        *Verify the size of this operation. If incorrect size (%11), then bad opcode!
+        *Set D1 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$00C0,D1   *Mask out everything but the size bits
+        LSR.B   #$06,D1     *Shift the size bits into LSB
+        
+        CMP.B   #$03,D1     *Compare the size bits to $3
+        BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
+        
         *Output 'ANDI' to console...
-        LEA     ANDI,A1  *Loads FNDANDI into address register A1
+        LEA     ANDI,A1     *Loads ANDI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
+        
         *Should have a valid ANDI op code. Set data up for EA.
-        *TODO:
-        MOVE.B  #14,D3
+        
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+        
         JMP     EA_ANDI
 
 EA_ANDI
-        JMP     THEEND  *For now just end
+        *Decode the ea bits of ANDI. Assuming D1 holds the size, D2 holds the EA mode,
+        *and D3 holds the EA register.
+        
+        *Determine how much data to read in, depending on the size of the operation
+        *output the size of the operation and the immediate data to console
+        JSR     WrapperSizeImmediate
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *Now we know this instruction is exactly EORI, lets set everything up for EA.
@@ -510,7 +557,7 @@ WrapperSizeImmediate
 *Used to get back to what we were doing, after dealing with the specific size
 WrapperSizeImmediateEnd
         RTS
-     
+        
 ByteSizeImmediate
         MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word
         
@@ -519,12 +566,16 @@ ByteSizeImmediate
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-        *Output some message, the immediate data is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
+        *Output '#$' just before the immediate data
+        LEA     ShaBang,A1
+        MOVE.B  #14,D0
+        TRAP    #15  
         
+        *go to teresia's thing        
+        *MOVE.L  (A2)+,A1
+        *MOVE.B #14,D0
+        *TRAP   #15
+                
         JMP     WrapperSizeImmediateEnd
                 
 WordSizeImmediate
@@ -535,11 +586,15 @@ WordSizeImmediate
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-        *Output some message, the immediate data is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
+        *Output '#$' just before the immediate data
+        LEA     ShaBang,A1
+        MOVE.B  #14,D0
+        TRAP    #15  
+        
+        *go to teresia's thing        
+        *MOVE.L  (A2)+,A1
+        *MOVE.B #14,D0
+        *TRAP   #15
         
         JMP     WrapperSizeImmediateEnd
                 
@@ -551,11 +606,15 @@ LongSizeImmediate
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D4)?
-        *Output some message, the immediate data is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
+        *Output '#$' just before the immediate data
+        LEA     ShaBang,A1
+        MOVE.B  #14,D0
+        TRAP    #15  
+        
+        *go to teresia's thing        
+        *MOVE.L  (A2)+,A1
+        *MOVE.B #14,D0
+        *TRAP   #15
         
         JMP     WrapperSizeImmediateEnd
 
@@ -998,7 +1057,7 @@ AddrIndPrReg7
 *-----------------------------------------------------------     
 *'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
 WrapperAddrAbsolute
-        CLR.L   D5
+        CLR.L   D4
         *Depending on the EA Register, choose which size to decode
         CMP.B   #$00,D3
         BEQ     WordSizeAbsolute
@@ -1011,31 +1070,45 @@ WrapperAddrAbsoluteEnd
         RTS
 
 WordSizeAbsolute        
-        MOVE.W  (A0)+,D5    *read in next word, data is that word
+        MOVE.W  (A0)+,D4    *read in next word, data is that word
         
-        *Probably need to output like 4 spaces here..., then output the value
+        *Output ',$' just after source operand
+        LEA     Bang,A1
+        MOVE.B  #14,D0
+        TRAP    #15
         
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D5)?
-        *Output some message, the abosolute mem address is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
+        *go to teresia's thing
+        *MOVE.L  (A2)+,A1
+        *MOVE.B #14,D0
+        *TRAP   #15
+        
+        *Print a new line, since this should be the last piece of data for an instruction
+        LEA     NewLine,A1
+        MOVE.B  #14,D0
+        TRAP    #15
         
         JMP     WrapperAddrAbsoluteEnd
 
 LongSizeAbsolute
-        MOVE.L  (A0)+,D5    *read in next long, data is that long
+        MOVE.L  (A0)+,D4    *read in next long, data is that long
+                
+        *Output ',$' just after source operand
+        LEA     Bang,A1
+        MOVE.B  #14,D0
+        TRAP    #15  
         
-        *Probably need to output like 4 spaces here..., then output the value
+        *go to teresia's thing        
+        *MOVE.L  (A2)+,A1
+        *MOVE.B #14,D0
+        *TRAP   #15
         
-        *HOW TO OUTPUT THE CONTENTS OF A REGISTER (D5)?
-        *Output some message, the abosolute mem address is...
-        *LEA     FNDADDI,A1  *Loads FNDADDI into address register A1
-        *MOVE.B  #14,D0      *Moves the number 14 into data register D0
-        *TRAP    #15         *Displays Message
+        *Print a new line, since this should be the last piece of data for an instruction
+        LEA     NewLine,A1
+        MOVE.B  #14,D0
+        TRAP    #15
 
         JMP     WrapperAddrAbsoluteEnd
-
+        
 
 *-----------------------------------------------------------        
 * Current handling of bad op/ea codes. Should be revisited.
@@ -1165,14 +1238,21 @@ OutAddrIndPoReg6    DC.B    ',(A6)+',CR,LF,0
 OutAddrIndPoReg7    DC.B    ',(A7)+',CR,LF,0
 
 *output for all address indirect pre registers (0-7)
-OutAddrIndPrReg0    DC.B    ',(A0)',CR,LF,0
-OutAddrIndPrReg1    DC.B    ',(A1)',CR,LF,0
-OutAddrIndPrReg2    DC.B    ',(A2)',CR,LF,0
-OutAddrIndPrReg3    DC.B    ',(A3)',CR,LF,0
-OutAddrIndPrReg4    DC.B    ',(A4)',CR,LF,0
-OutAddrIndPrReg5    DC.B    ',(A5)',CR,LF,0
-OutAddrIndPrReg6    DC.B    ',(A6)',CR,LF,0
-OutAddrIndPrReg7    DC.B    ',(A7)',CR,LF,0
+OutAddrIndPrReg0    DC.B    ',-(A0)',CR,LF,0
+OutAddrIndPrReg1    DC.B    ',-(A1)',CR,LF,0
+OutAddrIndPrReg2    DC.B    ',-(A2)',CR,LF,0
+OutAddrIndPrReg3    DC.B    ',-(A3)',CR,LF,0
+OutAddrIndPrReg4    DC.B    ',-(A4)',CR,LF,0
+OutAddrIndPrReg5    DC.B    ',-(A5)',CR,LF,0
+OutAddrIndPrReg6    DC.B    ',-(A6)',CR,LF,0
+OutAddrIndPrReg7    DC.B    ',-(A7)',CR,LF,0
+
+*output for a new line only
+NewLine DC.B    CR,LF,0
+
+*output for a '#$' and ',$' only
+ShaBang DC.B    '#$',0
+Bang    DC.B    ',$',0
 
 *current output for error messages
 BADEAMSG    DC.B    'BAD EA, WHY?!',CR,LF,0
@@ -1184,6 +1264,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 

@@ -9,16 +9,40 @@ START   ORG $7FC0
         MOVE.L  #$00008000,A0
 
 Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
+*ADDI.B
+*        ADDI.B  #$AB,D1
+*        ADDI.B  #$CD,(A0)        
+*        ADDI.B  #$EF,(A0)+
+*        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+*        ADDI.B  #$0A,$8200
+*        ADDI.B  #$0B,$00008100
+*        
+*ADDI.W
+*        ADDI.W  #$AB,D1
+*        ADDI.W  #$CD,(A0)        
+*        ADDI.W  #$EF,(A0)+
+*        ADDI.W  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+*        ADDI.W  #$0A,$8200
+*        ADDI.W  #$0B,$00008100     
+*
+*ADDI.L
+*        ADDI.L  #$AB,D1
+*        ADDI.L  #$CD,(A0)        
+*        ADDI.L  #$EF,(A0)+
+*        ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+*        ADDI.L  #$0A,$8200
+*        ADDI.L  #$0B,$00008100 
 
-ADDI.B
-        ADDI.B  #$AB,D1
-        ADDI.B  #$CD,(A0)        
-        ADDI.B  #$EF,(A0)+
-        ADDI.B  #$09,-(A0)
-        ADDI.B  #$02,$8200
-        ADDI.B  #$03,$00008100
+ANDI.B
+        ANDI.B  #$AB,D1
+        ANDI.B  #$CD,(A0)        
+        ANDI.B  #$EF,(A0)+
+        ANDI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+        ANDI.B  #$0A,$8200
+        ANDI.B  #$0B,$00008100
+        ANDI.B  #$0B,$00008100
         
-        *ANDI    #12,D1
+        
         *EORI    #12,D1
         *BCHG.L  D0,D1   *Dynamic
         *BCHG.L  #12,D1  *Static
@@ -26,7 +50,6 @@ ADDI.B
         
         END START
         
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

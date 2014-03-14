@@ -1,6 +1,6 @@
 00007FC0 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.12.29
-Created On: 3/13/2014 5:40:56 PM
+Created On: 3/13/2014 9:52:07 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -13,22 +13,46 @@ Created On: 3/13/2014 5:40:56 PM
 00007FC0  207C 00008000              9          MOVE.L  #$00008000,A0
 00007FC6                            10  
 00007FC6                            11  Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
-00007FC6                            12  
-00007FC6                            13  ADDI.B
-00007FC6  0601 00AB                 14          ADDI.B  #$AB,D1
-00007FCA  0610 00CD                 15          ADDI.B  #$CD,(A0)        
-00007FCE  0618 00EF                 16          ADDI.B  #$EF,(A0)+
-00007FD2  5020                      17          ADDI.B  #$08,-(A0)
-00007FD4  5439 00008200             18          ADDI.B  #$02,$8200
-00007FDA  5639 00008100             19          ADDI.B  #$03,$00008100
-00007FE0                            20          
-00007FE0                            21          *ANDI    #12,D1
-00007FE0                            22          *EORI    #12,D1
-00007FE0                            23          *BCHG.L  D0,D1   *Dynamic
-00007FE0                            24          *BCHG.L  #12,D1  *Static
-00007FE0                            25          *CMPI.B  #$12,D1         
-00007FE0                            26          
-00007FE0                            27          END START
+00007FC6                            12  *ADDI.B
+00007FC6                            13  *        ADDI.B  #$AB,D1
+00007FC6                            14  *        ADDI.B  #$CD,(A0)        
+00007FC6                            15  *        ADDI.B  #$EF,(A0)+
+00007FC6                            16  *        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FC6                            17  *        ADDI.B  #$0A,$8200
+00007FC6                            18  *        ADDI.B  #$0B,$00008100
+00007FC6                            19  *        
+00007FC6                            20  *ADDI.W
+00007FC6                            21  *        ADDI.W  #$AB,D1
+00007FC6                            22  *        ADDI.W  #$CD,(A0)        
+00007FC6                            23  *        ADDI.W  #$EF,(A0)+
+00007FC6                            24  *        ADDI.W  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FC6                            25  *        ADDI.W  #$0A,$8200
+00007FC6                            26  *        ADDI.W  #$0B,$00008100     
+00007FC6                            27  *
+00007FC6                            28  *ADDI.L
+00007FC6                            29  *        ADDI.L  #$AB,D1
+00007FC6                            30  *        ADDI.L  #$CD,(A0)        
+00007FC6                            31  *        ADDI.L  #$EF,(A0)+
+00007FC6                            32  *        ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FC6                            33  *        ADDI.L  #$0A,$8200
+00007FC6                            34  *        ADDI.L  #$0B,$00008100 
+00007FC6                            35  
+00007FC6                            36  ANDI.B
+00007FC6  0201 00AB                 37          ANDI.B  #$AB,D1
+00007FCA  0210 00CD                 38          ANDI.B  #$CD,(A0)        
+00007FCE  0218 00EF                 39          ANDI.B  #$EF,(A0)+
+00007FD2  0260 0001                 40          ANDI.W  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FD6  0239 000A 00008200        41          ANDI.B  #$0A,$8200
+00007FDE  0239 000B 00008100        42          ANDI.B  #$0B,$00008100
+00007FE6  0239 000B 00008100        43          ANDI.B  #$0B,$00008100
+00007FEE                            44          
+00007FEE                            45          
+00007FEE                            46          *EORI    #12,D1
+00007FEE                            47          *BCHG.L  D0,D1   *Dynamic
+00007FEE                            48          *BCHG.L  #12,D1  *Static
+00007FEE                            49          *CMPI.B  #$12,D1         
+00007FEE                            50          
+00007FEE                            51          END START
 
 No errors detected
 No warnings generated
@@ -37,6 +61,6 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ADDI.B              7FC6
+ANDI.B              7FC6
 BUCKET0000          7FC6
 START               7FC0
