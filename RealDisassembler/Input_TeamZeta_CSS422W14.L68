@@ -1,6 +1,6 @@
 00007FC0 Starting Address
-Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/14/2014 12:19:16 AM
+Assembler used: EASy68K Editor/Assembler v5.12.0
+Created On: 3/14/2014 1:39:27 AM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -14,52 +14,52 @@ Created On: 3/14/2014 12:19:16 AM
 00007FC6                            10  
 00007FC6                            11  Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 00007FC6                            12  ADDI.B
-00007FC6  0601 00AB                 13          ADDI.B  #$AB,D1
-00007FCA  0610 00CD                 14          ADDI.B  #$CD,(A0)        
-00007FCE  0618 00EF                 15          ADDI.B  #$EF,(A0)+
-00007FD2  0620 0009                 16          ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FD6  0639 000A 00008200        17          ADDI.B  #$0A,$8200
-00007FDE  0639 000B 00008100        18          ADDI.B  #$0B,$00008100
-00007FE6                            19          
-00007FE6                            20  *ADDI.W
-00007FE6                            21  *        ADDI.W  #$AB,D1
-00007FE6                            22  *        ADDI.W  #$CD,(A0)        
-00007FE6                            23  *        ADDI.W  #$EF,(A0)+
-00007FE6                            24  *        ADDI.W  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FE6                            25  *        ADDI.W  #$0A,$8200
-00007FE6                            26  *        ADDI.W  #$0B,$00008100     
-00007FE6                            27  *
-00007FE6                            28  *ADDI.L
-00007FE6                            29  *        ADDI.L  #$AB,D1
-00007FE6                            30  *        ADDI.L  #$CD,(A0)        
-00007FE6                            31  *        ADDI.L  #$EF,(A0)+
-00007FE6                            32  *        ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FE6                            33  *        ADDI.L  #$0A,$8200
-00007FE6                            34  *        ADDI.L  #$0B,$00008100 
-00007FE6                            35  *
-00007FE6                            36  *EORI.B
-00007FE6                            37  *        EORI.B  #$AB,D1
-00007FE6                            38  *        EORI.B  #$CD,(A0)        
-00007FE6                            39  *        EORI.B  #$EF,(A0)+
-00007FE6                            40  *        EORI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FE6                            41  *        EORI.B  #$0A,$8200
-00007FE6                            42  *        EORI.B  #$0B,$00008100
-00007FE6                            43  *        
-00007FE6                            44  *CMPI.B
-00007FE6                            45  *        CMPI.B  #$AB,D1
-00007FE6                            46  *        CMPI.B  #$CD,(A0)        
-00007FE6                            47  *        CMPI.B  #$EF,(A0)+
-00007FE6                            48  *        CMPI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FE6                            49  *        CMPI.B  #$0A,$8200
-00007FE6                            50  *        CMPI.B  #$0B,$00008100        
-00007FE6                            51          
-00007FE6                            52          
-00007FE6                            53          *EORI    #12,D1
-00007FE6                            54          *BCHG.L  D0,D1   *Dynamic
-00007FE6                            55          *BCHG.L  #12,D1  *Static
-00007FE6                            56          *CMPI.B  #$12,D1         
-00007FE6                            57          
-00007FE6                            58          END START
+00007FC6                            13  *        ADDI.B  #$AB,D1
+00007FC6                            14  *        ADDI.B  #$CD,(A0)        
+00007FC6                            15  *        ADDI.B  #$EF,(A0)+
+00007FC6                            16  *        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FC6  0639 000A 00008200        17          ADDI.B  #$0A,$8200
+00007FCE  0639 000B 00008100        18          ADDI.B  #$0B,$00008100
+00007FD6                            19          
+00007FD6                            20  *ADDI.W
+00007FD6                            21  *        ADDI.W  #$AB,D1
+00007FD6                            22  *        ADDI.W  #$CD,(A0)        
+00007FD6                            23  *        ADDI.W  #$EF,(A0)+
+00007FD6                            24  *        ADDI.W  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FD6                            25  *        ADDI.W  #$0A,$8200
+00007FD6                            26  *        ADDI.W  #$0B,$00008100     
+00007FD6                            27  *
+00007FD6                            28  *ADDI.L
+00007FD6                            29  *        ADDI.L  #$AB,D1
+00007FD6                            30  *        ADDI.L  #$CD,(A0)        
+00007FD6                            31  *        ADDI.L  #$EF,(A0)+
+00007FD6                            32  *        ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FD6                            33  *        ADDI.L  #$0A,$8200
+00007FD6                            34  *        ADDI.L  #$0B,$00008100 
+00007FD6                            35  *
+00007FD6                            36  *EORI.B
+00007FD6                            37  *        EORI.B  #$AB,D1
+00007FD6                            38  *        EORI.B  #$CD,(A0)        
+00007FD6                            39  *        EORI.B  #$EF,(A0)+
+00007FD6                            40  *        EORI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FD6                            41  *        EORI.B  #$0A,$8200
+00007FD6                            42  *        EORI.B  #$0B,$00008100
+00007FD6                            43  *        
+00007FD6                            44  *CMPI.B
+00007FD6                            45  *        CMPI.B  #$AB,D1
+00007FD6                            46  *        CMPI.B  #$CD,(A0)        
+00007FD6                            47  *        CMPI.B  #$EF,(A0)+
+00007FD6                            48  *        CMPI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FD6                            49  *        CMPI.B  #$0A,$8200
+00007FD6                            50  *        CMPI.B  #$0B,$00008100        
+00007FD6                            51          
+00007FD6                            52          
+00007FD6                            53          *EORI    #12,D1
+00007FD6                            54          *BCHG.L  D0,D1   *Dynamic
+00007FD6                            55          *BCHG.L  #12,D1  *Static
+00007FD6                            56          *CMPI.B  #$12,D1         
+00007FD6                            57          
+00007FD6                            58          END START
 
 No errors detected
 No warnings generated

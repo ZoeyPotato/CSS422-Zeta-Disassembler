@@ -10,10 +10,10 @@ START   ORG $7FC0
 
 Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 ADDI.B
-        ADDI.B  #$AB,D1
-        ADDI.B  #$CD,(A0)        
-        ADDI.B  #$EF,(A0)+
-        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+*        ADDI.B  #$AB,D1
+*        ADDI.B  #$CD,(A0)        
+*        ADDI.B  #$EF,(A0)+
+*        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
         ADDI.B  #$0A,$8200
         ADDI.B  #$0B,$00008100
         
@@ -57,6 +57,7 @@ ADDI.B
         
         END START
         
+
 
 *~Font name~Courier New~
 *~Font size~10~

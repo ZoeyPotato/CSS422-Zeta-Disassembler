@@ -166,7 +166,7 @@ exitSub		MOVEM.L	(SP)+,D1/D2	*Pop back data back to the respective registers
 * Hex to ASCII converter
 *-----------------------------------------------------------
 HEXASCII	MOVEM.L	D1/D4/D5,-(SP)	* Push registers into the stack
-			CMPI.B	#00,D1			* Check if it's sending a byte, word, or longword
+CHECK		CMPI.B	#00,D1			* Check if it's sending a byte, word, or longword
 			BEQ		CHNG_SZB		* Set the appropriate size for for-loop
 			CMP.W	#01,D1			
 			BEQ		CHNG_SZW
@@ -174,20 +174,33 @@ HEXASCII	MOVEM.L	D1/D4/D5,-(SP)	* Push registers into the stack
 
 HEXASCIIREG	MOVEM.L	D1/D4/D5,-(SP)	* Push registers into the stack
 CHNG_SZL	MOVE.B	#8,D1			* Set size to 8
-			BRA		CONV_LOOP		* Move on to the converter loop
+LOOP_L		CMPI.B	#00,D1
+			BEQ		EXIT_CONV
+			SUBI.B	#01,D1
+			ROL.L   #4,D4           * Shift it for next bit
+			MOVE.L	D4,D5			* Keep a copy of hex values in D5
+			JSR		CONV_LOOP
+			BRA		LOOP_L		
 
 CHNG_SZB	MOVE.B	#2,D1			* Set size to 2
-			BRA		CONV_LOOP		* Move on to converter loop
-CHNG_SZW	MOVE.B	#4,D1			* Set size to 4
-			BRA		CONV_LOOP
-
-CONV_LOOP	CMPI.B	#00,D1
+LOOP_B		CMPI.B	#00,D1
 			BEQ		EXIT_CONV
 			SUBI.B	#01,D1
 			ROL.B   #4,D4           * Shift it for next bit
 			MOVE.L	D4,D5			* Keep a copy of hex values in D5
-			*ROR.B	#4,D4			* Shift it for next bit
-			ANDI.L	#$0000000F,D5	* Grab only the last bit in D5
+			JSR		CONV_LOOP
+			BRA		LOOP_B
+			
+CHNG_SZW	MOVE.B	#4,D1			* Set size to 4
+LOOP_W		CMPI.B	#00,D1
+			BEQ		EXIT_CONV
+			SUBI.B	#01,D1
+			ROL.W   #4,D4           * Shift it for next bit
+			MOVE.L	D4,D5			* Keep a copy of hex values in D5
+			JSR		CONV_LOOP
+			BRA		LOOP_W
+
+CONV_LOOP	ANDI.L	#$0000000F,D5	* Grab only the last bit in D5
 			CMPI.B	#$0,D5
 			BEQ		NUM_0
 			CMPI.B	#$1,D5
@@ -226,7 +239,7 @@ EXIT_CONV	MOVEM.L	(SP)+,D1/D4/D5
 			
 PRINT_NUM	MOVE	#14,D0
 			TRAP	#15
-			BRA		CONV_LOOP
+			RTS
 NUM_0		LEA		PRNT0,A1
 			BRA		PRINT_NUM
 NUM_1		LEA		PRNT1,A1
@@ -1460,6 +1473,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 
