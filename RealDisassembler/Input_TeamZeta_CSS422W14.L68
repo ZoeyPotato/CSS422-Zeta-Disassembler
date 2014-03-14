@@ -1,6 +1,6 @@
 00007FC0 Starting Address
-Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/13/2014 4:42:16 AM
+Assembler used: EASy68K Editor/Assembler v5.12.29
+Created On: 3/13/2014 5:40:56 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -10,18 +10,25 @@ Created On: 3/13/2014 4:42:16 AM
 00000000                             6  *-----------------------------------------------------------
 00007FC0                             7  START   ORG $7FC0
 00007FC0                             8  
-00007FC0                             9          *MOVE.L  #$12345678,A0
-00007FC0                            10  
-00007FC0                            11          *BUCKET0000 TEST INSTRUCTIONS
-00007FC0  0641 ABCD                 12          ADDI.W  #$ABCD,D1
-00007FC4  0602 00EF                 13          ADDI.B  #$EF,D2
-00007FC8                            14          *ANDI    #12,D1
-00007FC8                            15          *EORI    #12,D1
-00007FC8                            16          *BCHG.L  D0,D1   *Dynamic
-00007FC8                            17          *BCHG.L  #12,D1  *Static
-00007FC8                            18          *CMPI.B  #$12,D1         
-00007FC8                            19          
-00007FC8                            20          END START
+00007FC0  207C 00008000              9          MOVE.L  #$00008000,A0
+00007FC6                            10  
+00007FC6                            11  Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
+00007FC6                            12  
+00007FC6                            13  ADDI.B
+00007FC6  0601 00AB                 14          ADDI.B  #$AB,D1
+00007FCA  0610 00CD                 15          ADDI.B  #$CD,(A0)        
+00007FCE  0618 00EF                 16          ADDI.B  #$EF,(A0)+
+00007FD2  5020                      17          ADDI.B  #$08,-(A0)
+00007FD4  5439 00008200             18          ADDI.B  #$02,$8200
+00007FDA  5639 00008100             19          ADDI.B  #$03,$00008100
+00007FE0                            20          
+00007FE0                            21          *ANDI    #12,D1
+00007FE0                            22          *EORI    #12,D1
+00007FE0                            23          *BCHG.L  D0,D1   *Dynamic
+00007FE0                            24          *BCHG.L  #12,D1  *Static
+00007FE0                            25          *CMPI.B  #$12,D1         
+00007FE0                            26          
+00007FE0                            27          END START
 
 No errors detected
 No warnings generated
@@ -30,4 +37,6 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
+ADDI.B              7FC6
+BUCKET0000          7FC6
 START               7FC0

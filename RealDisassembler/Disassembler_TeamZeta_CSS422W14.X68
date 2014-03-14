@@ -6,7 +6,7 @@
 * This program disassembles a subset of 68k assembly instructions. 
 * ***visit this later, describe what it does, how to use it, assumptions, etc.
 *-------------------------------------------------------------
-ST_ADDR 	EQU $7FC0   *Starting address of input test file
+ST_ADDR 	EQU $7FC6   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
 START   	ORG $1000   *Start program at provided location	
 			LEA	stack,SP
@@ -19,160 +19,164 @@ START   	ORG $1000   *Start program at provided location
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
         
-loop_1     	MOVE	#0,D0		
-			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
-        	MOVE.B	#14,D0
-        	TRAP	#15    
-        	MOVE	#2,D0
-        	LEA		CMD_HLD,A1	*Store the command in a buffer
-           	TRAP	#15
-           	CMPI.B	#01,D1
-           	BNE		INVALID1
-        	BRA		CHECK_UPY
-*-----------------------------------------------------------
+*loop_1     	MOVE	#0,D0		
+*			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
+*        	MOVE.B	#14,D0
+*        	TRAP	#15    
+*        	*MOVE	#2,D0
+*        	LEA		CMD_HLD,A1	*Store the command in a buffer
+*           	TRAP	#15
+*           	CMPI.B	#01,D1
+*           	BNE		INVALID1
+*        	BRA		CHECK_UPY
+**-----------------------------------------------------------
+**
+** I/O: Check Start Address
+**
+** Make sure that start address starts after allocated 
+** memory addresses. Else, it will print out a message 
+** saying that requested address is invalid & prompts the
+** user again for the starting address.
+**-----------------------------------------------------------
+*GET_STRT 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
+*			MOVE.B	#14,D0
+*			TRAP	#15
+*			LEA		STADDR,A1	*Need to change where it can hold the start/end address
+*			MOVE.W	STADDRSZ,D1	*Store the size in a buffer
+*			*MOVE	#2,D0			*Get start address
+*        	TRAP	#15
+*        	JSR		CHECKSTRT1
+*        	CLR.L	D7
+*        	JSR		ASCIIHEX	*Convert ASCII to Hex if all's ok
+*        	CMPI.B	#01,D3		*Check if there was a bad start
+*        	BEQ		INV_STRT1	*Prints error message if there was a bad start
+*        	CMPI.L	#ST_ADDR,D7	*Checks the minimum start address for D7
+*        	BLT		INV_STRT1	*Asks for another start address if invalid
+*        	CMPI.L	#$00FFFFFE,D7	*Checks if it goes beyond the possible end address
+*        	BGE		INV_STRT1
+*        	MOVE.L	D7,PROGST
 *
-* I/O: Check Start Address
+*GET_END		LEA		GETENDADDR,A1	*Command prompt for end address
+*			MOVE.B	#14,D0
+*			TRAP	#15
+*			LEA		ENDADDR,A1		*Buffer to hold end address
+*			MOVE.W	ENDADDRSZ,D1	*Buffer to hold size of end address
+*			*MOVE	#2,D0
+*			TRAP	#15
+*			JSR		CHECKEND1
+*			CLR.L	D7
+*			JSR		ASCIIHEX
+*			CMPI.B	#01,D3
+*			BEQ		INV_END1
+*			CMPI.L	#PROGST,D7
+*			BLT		INV_END1
+*			CMPI.L	#$00FFFFFF,D7
+*			BGE		INV_END1
+*			MOVEA.L	PROGST,A0			
+*        	        	
+*CHECKSTRT1	CMPI.L	#08,D1		*Check if size falls within range
+*			BGT		INV_STRT1
+*			CMPI.L	#00,D1
+*			BLS		INV_STRT1
+*			RTS			
+*			
+*CHECKEND1	CMPI.L	#08,D1
+*			BGT		INV_END1
+*			CMPI.L	#00,D1
+*			BLS		INV_END1
+*			RTS
 *
-* Make sure that start address starts after allocated 
-* memory addresses. Else, it will print out a message 
-* saying that requested address is invalid & prompts the
-* user again for the starting address.
-*-----------------------------------------------------------
-GET_STRT 	LEA		GETSTRTADDR,A1	*Ask start address once everything is OK.
-			MOVE.B	#14,D0
-			TRAP	#15
-			LEA		STADDR,A1	*Need to change where it can hold the start/end address
-			MOVE.W	STADDRSZ,D1	*Store the size in a buffer
-			MOVE	#2,D0			*Get start address
-        	TRAP	#15
-        	JSR		CHECKSTRT1
-        	CLR.L	D7
-        	JSR		ASCIIHEX	*Convert ASCII to Hex if all's ok
-        	CMPI.B	#01,D3		*Check if there was a bad start
-        	BEQ		INV_STRT1	*Prints error message if there was a bad start
-        	CMPI.L	#ST_ADDR,D7	*Checks the minimum start address for D7
-        	BLT		INV_STRT1	*Asks for another start address if invalid
-        	CMPI.L	#$00FFFFFE,D7	*Checks if it goes beyond the possible end address
-        	BGE		INV_STRT1
-        	MOVE.L	D7,PROGST
-
-GET_END		LEA		GETENDADDR,A1	*Command prompt for end address
-			MOVE.B	#14,D0
-			TRAP	#15
-			LEA		ENDADDR,A1		*Buffer to hold end address
-			MOVE.W	ENDADDRSZ,D1	*Buffer to hold size of end address
-			MOVE	#2,D0
-			TRAP	#15
-			JSR		CHECKEND1
-			CLR.L	D7
-			JSR		ASCIIHEX
-			CMPI.B	#01,D3
-			BEQ		INV_END1
-			CMPI.L	#PROGST,D7
-			BLT		INV_END1
-			CMPI.L	#$00FFFFFF,D7
-			BGE		INV_END1
-			MOVEA.L	PROGST,A0			
-        	        	
-CHECKSTRT1	CMPI.L	#08,D1		*Check if size falls within range
-			BGT		INV_STRT1
-			CMPI.L	#00,D1
-			BLS		INV_STRT1
-			RTS			
-			
-CHECKEND1	CMPI.L	#08,D1
-			BGT		INV_END1
-			CMPI.L	#00,D1
-			BLS		INV_END1
-			RTS
-
-*-----------------------------------------------------------
-* I/O: Input check for Y, y, N, n
-*-----------------------------------------------------------
-CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
-			BEQ		GET_STRT
-			
-CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
-			BEQ		GET_STRT
-			
-CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
-			BEQ		DONE
-			
-CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
-			BEQ		DONE
-			
-INVALID1	MOVE.B	#0,D3		*Reset bad flag
-			MOVE	#0,D0		*Prints invalid command msg if not found
-			LEA		INV_MSG,A1
-			MOVE	#14,D0
-			TRAP	#15
-			BRA		loop_1
-			
-INV_STRT1	LEA		INVSTRTMSG,A1
-			MOVE.B	#14,D0
-			TRAP	#15
-			MOVE.B	#00,D3		*Reset flag
-			BRA		GET_STRT		
-			
-INV_END1	LEA		INVENDMSG,A1
-			MOVE.B	#14,D0
-			TRAP	#15
-			MOVE.B	#00,D3		*Reset flag
-			BRA		GET_END
-			
-*-----------------------------------------------------------
-* ASCII to Hex converter
+**-----------------------------------------------------------
+** I/O: Input check for Y, y, N, n
+**-----------------------------------------------------------
+*CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
+*			BEQ		GET_STRT
+*			
+*CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
+*			BEQ		GET_STRT
+*			
+*CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
+*			BEQ		DONE
+*			
+*CHECK_LOWn	CMPI.B	#$6E,(A1)	*Checks for lowercase n
+*			BEQ		DONE
+*			
+*INVALID1	MOVE.B	#0,D3		*Reset bad flag
+*			MOVE	#0,D0		*Prints invalid command msg if not found
+*			LEA		INV_MSG,A1
+*			MOVE	#14,D0
+*			TRAP	#15
+*			BRA		loop_1
+*			
+*INV_STRT1	LEA		INVSTRTMSG,A1
+*			MOVE.B	#14,D0
+*			TRAP	#15
+*			MOVE.B	#00,D3		*Reset flag
+*			BRA		GET_STRT		
+*			
+*INV_END1	LEA		INVENDMSG,A1
+*			MOVE.B	#14,D0
+*			TRAP	#15
+*			MOVE.B	#00,D3		*Reset flag
+*			BRA		GET_END
+*			
+**-----------------------------------------------------------
+** ASCII to Hex converter
+**
+** Checks and converts the ASCII value to the hex equivalent
+**-----------------------------------------------------------
+*ASCIIHEX	MOVEM.L	D1/D2,-(SP)	*Free up and store the values in the stack
+*ASCIIHEX1	CMPI.B	#00,D1		*See if done
+*			BEQ		exitSub		*Exit subroutine 
+*			SUBI.B	#01,D1		*Keep track of how many chars we need to go through
+*			ROL.L	#4,D7		*Keep shifting to add the next appropriate hex for the full addr
+*			MOVE.B	(A1)+,D2	*Takes the first char
+*			CMPI.B	#$24,D2		*See if the first char is $
+*			BEQ		ASCIIHEX1	*Loop through to get the next char if first is $
+*			CMPI.B	#$30,D2		*See if the char is less than the hex value for '0'
+*			BLT		st_bad		*Put error message
+*			CMPI.B	#$39,D2		*Checks if char value is between 0 and 9's hex value
+*			BLE		CONV_NUM	*Convert to number, if so
+*			CMPI.B	#$41,D2		*Checks if char value is not a number or letter (A-F)
+*			BLT		st_bad		*Put error message
+*			CMPI.B	#$46,D2		*Checks if char value is an uppercase letter between A and F
+*			BLE		CONV_UpL	*Convert to hex
+*			CMPI.B	#$61,D2		*Checks for non-valid chars
+*			BLT		st_bad
+*			CMPI.B	#$66,D2		*Checks for lowercase chars of (a-f)
+*			BLE		CONV_LoL	
+*			BGT		st_bad		*Puts error message for anything greater than f value
+*			
+*CONV_NUM	SUBI.B	#$30,D2
+*			OR.B	D2,D7
+*			JMP		ASCIIHEX1
+*CONV_UpL	SUBI.B	#$37,D2		*Put it in a range of 10-15
+*			OR.B	D2,D7
+*			JMP		ASCIIHEX1
+*CONV_LoL	SUBI.B	#$57,D2
+*			OR.B	D2,D7
+*			JMP		ASCIIHEX1	
 *
-* Checks and converts the ASCII value to the hex equivalent
-*-----------------------------------------------------------
-ASCIIHEX	MOVEM.L	D1/D2,-(SP)	*Free up and store the values in the stack
-ASCIIHEX1	CMPI.B	#00,D1		*See if done
-			BEQ		exitSub		*Exit subroutine 
-			SUBI.B	#01,D1		*Keep track of how many chars we need to go through
-			ROL.L	#4,D7		*Keep shifting to add the next appropriate hex for the full addr
-			MOVE.B	(A1)+,D2	*Takes the first char
-			CMPI.B	#$24,D2		*See if the first char is $
-			BEQ		ASCIIHEX1	*Loop through to get the next char if first is $
-			CMPI.B	#$30,D2		*See if the char is less than the hex value for '0'
-			BLT		st_bad		*Put error message
-			CMPI.B	#$39,D2		*Checks if char value is between 0 and 9's hex value
-			BLE		CONV_NUM	*Convert to number, if so
-			CMPI.B	#$41,D2		*Checks if char value is not a number or letter (A-F)
-			BLT		st_bad		*Put error message
-			CMPI.B	#$46,D2		*Checks if char value is an uppercase letter between A and F
-			BLE		CONV_UpL	*Convert to hex
-			CMPI.B	#$61,D2		*Checks for non-valid chars
-			BLT		st_bad
-			CMPI.B	#$66,D2		*Checks for lowercase chars of (a-f)
-			BLE		CONV_LoL	
-			BGT		st_bad		*Puts error message for anything greater than f value
-			
-CONV_NUM	SUBI.B	#$30,D2
-			OR.B	D2,D7
-			JMP		ASCIIHEX1
-CONV_UpL	SUBI.B	#$37,D2		*Put it in a range of 10-15
-			OR.B	D2,D7
-			JMP		ASCIIHEX1
-CONV_LoL	SUBI.B	#$57,D2
-			OR.B	D2,D7
-			JMP		ASCIIHEX1	
-
-st_bad		ADDI.B	#01,D3
-exitSub		MOVEM.L	(SP)+,D1/D2	*Pop back data back to the respective registers
-			RTS
-			
-*-----------------------------------------------------------
-* Hex to ASCII converter
-*-----------------------------------------------------------
-HEXASCII	
+*st_bad		ADDI.B	#01,D3
+*exitSub		MOVEM.L	(SP)+,D1/D2	*Pop back data back to the respective registers
+*			RTS
+*			
+**-----------------------------------------------------------
+** Hex to ASCII converter
+**-----------------------------------------------------------
+*HEXASCII	
 
 
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------
+        *FOR DEBUGGING ONLY!!!
         MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
         
 GRAB_NEXT_OP
+        *Need a check here to see if A0 == end of test address
+        *if so, go to end.
+
         *Move word data at (A0) into D0. D0 should now hold the entire 16 bits of the
         *next OP CODE instruction to disassemble, EXCLUDING any immediate/absolute 
         *data that may be associated with the instruction.
@@ -1151,14 +1155,14 @@ OutAddrIndReg6  DC.B    ',(A6)',CR,LF,0
 OutAddrIndReg7  DC.B    ',(A7)',CR,LF,0
 
 *output for all address indirect post registers (0-7)
-OutAddrIndPoReg0    DC.B    ',(A0)',CR,LF,0
-OutAddrIndPoReg1    DC.B    ',(A1)',CR,LF,0
-OutAddrIndPoReg2    DC.B    ',(A2)',CR,LF,0
-OutAddrIndPoReg3    DC.B    ',(A3)',CR,LF,0
-OutAddrIndPoReg4    DC.B    ',(A4)',CR,LF,0
-OutAddrIndPoReg5    DC.B    ',(A5)',CR,LF,0
-OutAddrIndPoReg6    DC.B    ',(A6)',CR,LF,0
-OutAddrIndPoReg7    DC.B    ',(A7)',CR,LF,0
+OutAddrIndPoReg0    DC.B    ',(A0)+',CR,LF,0
+OutAddrIndPoReg1    DC.B    ',(A1)+',CR,LF,0
+OutAddrIndPoReg2    DC.B    ',(A2)+',CR,LF,0
+OutAddrIndPoReg3    DC.B    ',(A3)+',CR,LF,0
+OutAddrIndPoReg4    DC.B    ',(A4)+',CR,LF,0
+OutAddrIndPoReg5    DC.B    ',(A5)+',CR,LF,0
+OutAddrIndPoReg6    DC.B    ',(A6)+',CR,LF,0
+OutAddrIndPoReg7    DC.B    ',(A7)+',CR,LF,0
 
 *output for all address indirect pre registers (0-7)
 OutAddrIndPrReg0    DC.B    ',(A0)',CR,LF,0
@@ -1180,6 +1184,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 *~Font name~Courier New~
