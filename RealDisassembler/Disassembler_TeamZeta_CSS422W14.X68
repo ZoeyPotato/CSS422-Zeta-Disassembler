@@ -8,8 +8,10 @@
 *-------------------------------------------------------------
 ST_ADDR 	EQU $7FC6   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
+MAX_LINE	EQU		15		*Maximum number of instructions that can be 
 START   	ORG $1000   *Start program at provided location	
 			LEA	stack,SP
+			MOVE	#MAX_LINE,D6
 
 
 *-----------------------------------------------------------
@@ -28,7 +30,7 @@ loop_1     	MOVE	#0,D0
            	TRAP	#15
            	CMPI.B	#01,D1
            	BNE		INVALID1
-        	BRA		CHECK_UPY
+        	JSR		CHECK_UPY
 *-----------------------------------------------------------
 *
 * I/O: Check Start Address
@@ -72,6 +74,7 @@ GET_END		LEA		GETENDADDR,A1	*Command prompt for end address
 			BLT		INV_END1
 			CMPI.L	#$00FFFFFF,D7
 			BGE		INV_END1
+			MOVE.L	D7,PROGEND
 			MOVEA.L	PROGST,A0
 			BRA		GRAB_NEXT_OP			
         	        	
@@ -91,11 +94,11 @@ CHECKEND1	CMPI.L	#08,D1
 * I/O: Input check for Y, y, N, n
 *-----------------------------------------------------------
 CHECK_UPY	CMPI.B	#$59,(A1)	*Checks for uppercase Y
-			BEQ		GET_STRT
-			
+			BNE		CHECK_LOWY
+			RTS
 CHECK_LOWy	CMPI.B	#$79,(A1)	*Checks for lowercase y
-			BEQ		GET_STRT
-			
+			BNE		CHECK_UPN
+			RTS
 CHECK_UPN	CMPI.B	#$4E,(A1)	*Checks for uppercase N
 			BEQ		DONE
 			
@@ -280,9 +283,12 @@ NUM_F		LEA		PRNTF,A1
         MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
         
 GRAB_NEXT_OP
-        *Check and see if A0 == end of test address. If so, go to end of program.
-        *some code...
-        
+        MOVE.L	A0,D7		
+        CMPI.L	#PROGEND,D7  *Check and see if A0 == end of test address. 
+        BEQ		loop_1		* Ask user if they want to do the disassembler again
+        CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
+        BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
+        SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
         *Output the address of this instruction to console...
         MOVE.L  A0,D4
         JSR     HEXASCIIREG
@@ -310,7 +316,39 @@ GRAB_NEXT_OP
         LSR.W   #$04,D0
         *Now try to figure out what OP CODE this is using these 4 bits. Run down the
         *list of buckets until we find which one this instruction falls into.
+        JSR		BUCKET_0000		* Start with 0000
+        BRA		GRAB_NEXT_OP	* Loop back
 
+*-----------------------------------------------------------        
+* Question Prompts
+*-----------------------------------------------------------        
+CONT_Q		LEA		QUES_CONT,A1
+			MOVE	#14,D0
+			TRAP	#15
+			LEA		CONT,A1		*Need to store Y/N
+			MOVE	#2,D0
+			TRAP	#15
+			CMPI.B	#01,D1
+	        BNE		INVALID1
+			CMPI.B	#$59,CONT	*Checks for uppercase Y
+			BNE		CHECK_Y
+			MOVE	#MAX_LINE,D6	*Resets counter
+			RTS
+CHECK_Y		CMPI.B	#$79,(A1)	*Checks for lowercase y
+			BNE		CHECK_N
+			MOVE	#MAX_LINE,D6	*Resets counter
+			RTS
+CHECK_N		CMPI.B	#$4E,(A1)	*Checks for uppercase N
+			BEQ		loop_1
+			CMPI.B	#$6E,(A1)	*Checks for lowercase n
+			BEQ		loop_1      
+
+INV2		MOVE.B	#0,D3		*Reset bad flag
+			MOVE	#0,D0		*Prints invalid command msg if not found
+			LEA		INV_MSG,A1
+			MOVE	#14,D0
+			TRAP	#15
+			BRA		CONT_Q
 
 *-----------------------------------------------------------        
 * Bucket 0000:
@@ -1446,6 +1484,9 @@ GETSTRTADDR DC.B	' ',CR,LF
 GETENDADDR	DC.B	' ',CR,LF
 			DC.B	'Please type in your ending address request: ',0
 			
+QUES_CONT	DC.B	' ',CR,LF
+			DC.B	'Would you like to continue (Y/N)? ',0
+			
 QUIT_MSG	DC.B	' ',CR,LF
 			DC.B	'Would you like to quit (Y/N)? ',0
 
@@ -1460,6 +1501,7 @@ PROGST		DS.L	1
 ENDADDR		DS.B	10
 ENDADDRSZ	DS.B	10
 PROGEND		DS.L	1
+CONT		DS.B	30
 *****************************************************
 
 *Table for 0-9 && A-F
@@ -1555,6 +1597,8 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
+
 
 
 
