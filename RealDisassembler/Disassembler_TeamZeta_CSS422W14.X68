@@ -31,8 +31,9 @@ loop_1     	MOVE	#0,D0
            	CMPI.B	#01,D1
            	BNE		INVALID1
         	JSR		CHECK_UPY
+        	
+        	
 *-----------------------------------------------------------
-*
 * I/O: Check Start Address
 *
 * Make sure that start address starts after allocated 
@@ -90,6 +91,7 @@ CHECKEND1	CMPI.L	#08,D1
 			BLS		INV_END1
 			RTS
 
+
 *-----------------------------------------------------------
 * I/O: Input check for Y, y, N, n
 *-----------------------------------------------------------
@@ -123,6 +125,7 @@ INV_END1	LEA		INVENDMSG,A1
 			TRAP	#15
 			MOVE.B	#00,D3		*Reset flag
 			BRA		GET_END
+			
 			
 *-----------------------------------------------------------
 * ASCII to Hex converter
@@ -164,6 +167,7 @@ CONV_LoL	SUBI.B	#$57,D2
 st_bad		ADDI.B	#01,D3
 exitSub		MOVEM.L	(SP)+,D1/D2	*Pop back data back to the respective registers
 			RTS
+			
 			
 *-----------------------------------------------------------
 * Hex to ASCII converter
@@ -284,12 +288,18 @@ NUM_F		LEA		PRNTF,A1
         MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
         
 GRAB_NEXT_OP
+        *Check and see if A0 == end of test address. If so, we need to end.
         MOVE.L	A0,D7		
-        CMPI.L	#PROGEND,D7  *Check and see if A0 == end of test address. 
+        CMPI.L	#PROGEND,D7   
         BGE		loop_1		* Ask user if they want to do the disassembler again
         CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
         SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
+
+        *Output a newline to console...        
+        LEA     NewLine,A1  *Loads NewLine into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
 
         *Output the address of this instruction to console...
         MOVE.L  A0,D4
@@ -1629,6 +1639,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 *~Font name~Courier New~
