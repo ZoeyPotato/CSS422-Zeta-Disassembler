@@ -521,25 +521,35 @@ EA_EORI
 
 
 *Found a possible BCHG(dynamic) instruction. Verify its bit integrity and then set
-* everything up for EA if is a legit instruction. Assuming D0 holds full instruction.
+* everything up for EA if is a legit instruction.
 IS_BCHG_D
-        MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
-        
         *Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
         *invalid, branch to BADOPCODE
+        MOVE.W  D7,D0      *Move the WHOLE instruction back to D0
         BTST.L  #$07,D0
         BNE     BADOPCODE  *If the zbit was 0 (the 7th bit is 1), branch to BADOPCODE
         BTST.L  #$06,D0
         BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
         
-        *Output 'BCHG(dynamic)' to console...
-        LEA     BCHG_D,A1    *Loads FNDBCHG_D into address register A1
+        *Output 'BCHG' to console...
+        LEA     BCHG,A1         *Loads BCHG into address register A1
         MOVE.B  #14,D0          *Moves the number 14 into data register D0
         TRAP    #15             *Displays Message
                 
-        *Should have a valid BCHG(dynamic) op code. Set data up for EA.
-        *TODO:
-        MOVE.B  #14,D3
+                
+        *Should have a valid BCHG op code. Set data up for EA.
+
+*        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+*        CLR.L   D2
+*        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+*        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+*        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+*                
+*        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+*        CLR.L   D3
+*        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+*        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+
         JMP     EA_BCHG_D
 
 EA_BCHG_D
@@ -1394,8 +1404,7 @@ PRNTF	DC.B	'F',0
 ADDI    DC.B    'ADDI',0
 ANDI    DC.B    'ANDI',0
 EORI    DC.B    'EORI',0
-BCHG_D  DC.B    'BCHG(dynamic)',0
-BCHG_S  DC.B    'BCHG(static)',0
+BCHG    DC.B    'BCHG',0
 CMPI    DC.B    'CMPI',0
 
 *output for the size of the operation
@@ -1460,6 +1469,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 
 
