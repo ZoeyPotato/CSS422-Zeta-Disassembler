@@ -289,9 +289,9 @@ NUM_F		LEA		PRNTF,A1
         
 GRAB_NEXT_OP
         *Check and see if A0 == end of test address. If so, we need to end.
-        MOVE.L	A0,D7		
-        *CMPI.L	#PROGEND,D7   
-        *BGE		loop_1		* Ask user if they want to do the disassembler again
+		MOVE.L	A0,D7
+		MOVEA.L	PROGEND,A2
+        CMP.L	A2,D7  		* Check and see if A0 == end of test address. 
         CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
         SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
@@ -1706,6 +1706,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
