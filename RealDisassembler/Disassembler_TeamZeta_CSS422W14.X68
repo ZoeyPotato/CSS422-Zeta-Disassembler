@@ -365,24 +365,67 @@ EA_ANDI
         
         *If the ea mode isn't equal to any of these, it is an invalid EA
         JMP     BADEACODE
-
+        
 
 *Now we know this instruction is exactly EORI, lets set everything up for EA.
 IS_EORI
-		*TODO:Verify bits
-
-		*Output 'EORI' to console...
-        LEA     EORI,A1  *Loads FNDEORI into address register A1
+		*Verify the size of this operation. If incorrect size (%11), then bad opcode!
+        *Set D1 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$00C0,D1   *Mask out everything but the size bits
+        LSR.B   #$06,D1     *Shift the size bits into LSB
+        
+        CMP.B   #$03,D1     *Compare the size bits to $3
+        BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
+        
+        *Output 'EORI' to console...
+        LEA     EORI,A1     *Loads EORI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
+        
         *Should have a valid EORI op code. Set data up for EA.
-        *TODO:
-        MOVE.B  #14,D3
+        
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+        
         JMP     EA_EORI
 
 EA_EORI
-        JMP     THEEND  *For now just end
+        *Decode the ea bits of EORI. Assuming D1 holds the size, D2 holds the EA mode,
+        *and D3 holds the EA register.
+        
+        *Determine how much data to read in, depending on the size of the operation
+        *output the size of the operation and the immediate data to console
+        JSR     WrapperSizeImmediate
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *Found a possible BCHG(dynamic) instruction. Verify its bit integrity and then set
@@ -431,22 +474,65 @@ EA_BCHG_S
 
 *Now we know this instruction is exactly CMPI, lets set everything up for EA.
 IS_CMPI
-		*TODO:Verify bits
-
-		*Output 'CMPI' to console...
-        LEA     CMPI,A1  *Loads FNDCMPI into address register A1
+		*Verify the size of this operation. If incorrect size (%11), then bad opcode!
+        *Set D1 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$00C0,D1   *Mask out everything but the size bits
+        LSR.B   #$06,D1     *Shift the size bits into LSB
+        
+        CMP.B   #$03,D1     *Compare the size bits to $3
+        BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
+        
+        *Output 'CMPI' to console...
+        LEA     CMPI,A1     *Loads CMPI into address register A1
         MOVE.B  #14,D0      *Moves the number 14 into data register D0
         TRAP    #15         *Displays Message
         
+        
         *Should have a valid CMPI op code. Set data up for EA.
-        *TODO:
-        MOVE.B  #14,D3
+        
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+        
         JMP     EA_CMPI
 
 EA_CMPI
-        JMP     THEEND  *For now just end
+        *Decode the ea bits of CMPI. Assuming D1 holds the size, D2 holds the EA mode,
+        *and D3 holds the EA register.
+        
+        *Determine how much data to read in, depending on the size of the operation
+        *output the size of the operation and the immediate data to console
+        JSR     WrapperSizeImmediate
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
-
+        
 *STARTS WITH 0001, MOVE.B-----------------------------------
 BUCKET_0001
 BUCKET0001_BITS EQU $1

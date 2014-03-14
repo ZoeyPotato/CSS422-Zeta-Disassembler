@@ -32,15 +32,22 @@ Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 *        ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
 *        ADDI.L  #$0A,$8200
 *        ADDI.L  #$0B,$00008100 
-
-ANDI.B
-        ANDI.B  #$AB,D1
-        ANDI.B  #$CD,(A0)        
-        ANDI.B  #$EF,(A0)+
-        ANDI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
-        ANDI.B  #$0A,$8200
-        ANDI.B  #$0B,$00008100
-        ANDI.B  #$0B,$00008100
+*
+*EORI.B
+*        EORI.B  #$AB,D1
+*        EORI.B  #$CD,(A0)        
+*        EORI.B  #$EF,(A0)+
+*        EORI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+*        EORI.B  #$0A,$8200
+*        EORI.B  #$0B,$00008100
+*        
+CMPI.B
+        CMPI.B  #$AB,D1
+        CMPI.B  #$CD,(A0)        
+        CMPI.B  #$EF,(A0)+
+        CMPI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+        CMPI.B  #$0A,$8200
+        CMPI.B  #$0B,$00008100        
         
         
         *EORI    #12,D1
