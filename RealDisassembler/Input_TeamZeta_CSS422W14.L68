@@ -1,6 +1,6 @@
 00007FC0 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/14/2014 3:34:07 AM
+Created On: 3/14/2014 5:30:08 AM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -53,19 +53,28 @@ Created On: 3/14/2014 3:34:07 AM
 00007FC6                            49  *        CMPI.B  #$0A,$8200
 00007FC6                            50  *        CMPI.B  #$0B,$00008100                
 00007FC6                            51  *
-00007FC6                            52  BCHG_dynamic
-00007FC6  0141                      53          BCHG.L  D0,D1
-00007FC8  0150                      54          BCHG.B  D0,(A0)
-00007FCA  0158                      55          BCHG.B  D0,(A0)+
-00007FCC  0160                      56          BCHG.B  D0,-(A0)
-00007FCE  0179 00008200             57          BCHG.B  D0,$8200
-00007FD4  0179 00008100             58          BCHG.B  D0,$00008100        
-00007FDA                            59          
-00007FDA                            60  
-00007FDA                            61          *BCHG.L  #12,D1  *Static
-00007FDA                            62          *CMPI.B  #$12,D1         
-00007FDA                            63          
-00007FDA                            64          END START
+00007FC6                            52  *BCHG_dynamic
+00007FC6                            53  *        BCHG.L  D0,D1
+00007FC6                            54  *        BCHG.B  D0,(A0)
+00007FC6                            55  *        BCHG.B  D0,(A0)+
+00007FC6                            56  *        BCHG.B  D0,-(A0)
+00007FC6                            57  *        BCHG.B  D0,$8200
+00007FC6                            58  *        BCHG.B  D0,$00008100        
+00007FC6                            59  *               
+00007FC6                            60  BCHG_static
+00007FC6  0841 00AB                 61          BCHG.L  #$AB,D1
+00007FCA  0850 00CD                 62          BCHG.B  #$CD,(A0)
+00007FCE  0858 00EF                 63          BCHG.B  #$EF,(A0)+
+00007FD2  0860 0001                 64          BCHG.B  #$01,-(A0)
+00007FD6  0879 0002 00008200        65          BCHG.B  #$02,$8200
+00007FDE  0879 0003 00008100        66          BCHG.B  #$03,$00008100         
+00007FE6                            67  
+00007FE6                            68  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
+00007FE6                            69  
+00007FE6                            70          *BCHG.L  #12,D1  *Static
+00007FE6                            71          *CMPI.B  #$12,D1         
+00007FE6                            72          
+00007FE6                            73          END START
 
 No errors detected
 No warnings generated
@@ -74,6 +83,6 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-BCHG_DYNAMIC        7FC6
+BCHG_STATIC         7FC6
 BUCKET0000          7FC6
 START               7FC0

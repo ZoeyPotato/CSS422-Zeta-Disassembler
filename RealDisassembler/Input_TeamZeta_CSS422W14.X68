@@ -49,14 +49,23 @@ Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 *        CMPI.B  #$0A,$8200
 *        CMPI.B  #$0B,$00008100                
 *
-BCHG_dynamic
-        BCHG.L  D0,D1
-        BCHG.B  D0,(A0)
-        BCHG.B  D0,(A0)+
-        BCHG.B  D0,-(A0)
-        BCHG.B  D0,$8200
-        BCHG.B  D0,$00008100        
-        
+*BCHG_dynamic
+*        BCHG.L  D0,D1
+*        BCHG.B  D0,(A0)
+*        BCHG.B  D0,(A0)+
+*        BCHG.B  D0,-(A0)
+*        BCHG.B  D0,$8200
+*        BCHG.B  D0,$00008100        
+*               
+BCHG_static
+        BCHG.L  #$AB,D1
+        BCHG.B  #$CD,(A0)
+        BCHG.B  #$EF,(A0)+
+        BCHG.B  #$01,-(A0)
+        BCHG.B  #$02,$8200
+        BCHG.B  #$03,$00008100         
+
+*JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
 
         *BCHG.L  #12,D1  *Static
         *CMPI.B  #$12,D1         

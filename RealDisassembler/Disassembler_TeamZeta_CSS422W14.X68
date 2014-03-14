@@ -290,8 +290,8 @@ NUM_F		LEA		PRNTF,A1
 GRAB_NEXT_OP
         *Check and see if A0 == end of test address. If so, we need to end.
         MOVE.L	A0,D7		
-        CMPI.L	#PROGEND,D7   
-        BGE		loop_1		* Ask user if they want to do the disassembler again
+        *CMPI.L	#PROGEND,D7   
+        *BGE		loop_1		* Ask user if they want to do the disassembler again
         CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
         SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
@@ -329,6 +329,7 @@ GRAB_NEXT_OP
         *Now try to figure out what OP CODE this is using these 4 bits. Run down the
         *list of buckets until we find which one this instruction falls into.
         BRA		BUCKET_0000		* Start with 0000
+
 
 *-----------------------------------------------------------        
 * Question Prompts
@@ -688,20 +689,72 @@ EA_BCHG_D
 
 *Now we know this instruction is exactly BCHG(static), lets set everything up for EA.
 IS_BCHG_S
-		*TODO:Verify bits
-
-		*Output 'BCHG' to console...
-        LEA     BCHG,A1 *Loads FNDBCHG_S into address register A1
-        MOVE.B  #14,D0  *Moves the number 14 into data register D0
-        TRAP    #15     *Displays Message
+		*Check bits 7 and 6, these should be 0 and 1. If not, this instruction is
+        *invalid, branch to BADOPCODE
+        MOVE.W  D7,D0      *Move the WHOLE instruction back to D0
+        BTST.L  #$07,D0
+        BNE     BADOPCODE  *If the zbit was 0 (the 7th bit is 1), branch to BADOPCODE
+        BTST.L  #$06,D0
+        BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
         
-        *Should have a valid BCHG_S op code. Set data up for EA.
-        *TODO:
-        MOVE.B  #14,D3
+        *Output 'BCHG' to console...
+        LEA     BCHG,A1         *Loads BCHG into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        
+        *Should have a valid BCHG op code. Set data up for EA.
+        
+        *Move #$00 into D1, BCHG_S's immediate data is always in byte size
+        CLR.L   D1
+        MOVE.W  #$00,D1
+
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+
         JMP     EA_BCHG_S
 
 EA_BCHG_S
-        JMP     THEEND  *For now just end
+        *Decode the ea bits of BCHG(static). Assuming D2 holds the EA mode, and 
+        *D3 holds the EA register.
+        
+        *Determine the size of this BCHG instruction. Output the correct size...
+        JSR     BCHGSizeHelper                
+        
+        *output the immediate data of this operation to console (always byte)...
+        JSR     BCHGImmediate
+        
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *Now we know this instruction is exactly CMPI, lets set everything up for EA.
@@ -966,6 +1019,20 @@ BCHGByteSize
         TRAP    #15         *Displays Message   
         
         JMP     BCHGSizeHelperEnd
+        
+*Output the immediate data for a BCHG(static). Data is always byte size.
+BCHGImmediate
+        MOVE.W  (A0)+,D4    *read in the next word, data is the last 2 chars of word        
+        
+        *Output '#$' just before the immediate data
+        LEA     ShaBang,A1
+        MOVE.B  #14,D0
+        TRAP    #15  
+        
+        *output the immediate data to console with the hex-ascii converter
+        JSR     HEXASCII
+                
+        RTS        
 
 
 *-----------------------------------------------------------        
@@ -1639,9 +1706,6 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
-
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
