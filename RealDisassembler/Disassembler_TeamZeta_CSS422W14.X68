@@ -75,7 +75,8 @@ GET_END		LEA		GETENDADDR,A1	*Command prompt for end address
 			CMPI.L	#$00FFFFFF,D7
 			BGE		INV_END1
 			MOVE.L	D7,PROGEND
-			BRA		PL_STADDR			
+			MOVEA.L	PROGST,A0
+			BRA		GRAB_NEXT_OP			
         	        	
 CHECKSTRT1	CMPI.L	#08,D1		*Check if size falls within range
 			BGT		INV_STRT1
@@ -275,21 +276,21 @@ NUM_E		LEA		PRNTE,A1
 NUM_F		LEA		PRNTF,A1
 			BRA		PRINT_NUM
 
+
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------
         *FOR DEBUGGING ONLY!!!
-*        MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
-PL_STADDR	MOVEA.L	PROGST,A0
+        MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
         
 GRAB_NEXT_OP
-		MOVE.L	A0,D7
-		MOVEA.L	PROGEND,A2
-        CMP.L	A2,D7  		* Check and see if A0 == end of test address. 
+        MOVE.L	A0,D7		
+        CMPI.L	#PROGEND,D7  *Check and see if A0 == end of test address. 
         BGE		loop_1		* Ask user if they want to do the disassembler again
         CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
         SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
+
         *Output the address of this instruction to console...
         MOVE.L  A0,D4
         JSR     HEXASCIIREG
@@ -638,11 +639,17 @@ EA_BCHG_D
         *Decode the ea bits of BCHG(dynamic). Assuming D1 holds the source register, 
         *D2 holds the EA mode, and D3 holds the EA register.
         
+        *Determine the size of this BCHG instruction. Output the correct size...
+        JSR     BCHGSizeHelper
+        
         *output the source register to console, flag D6 with a 1 so we come back...
-        MOVEM.L  D6,-(SP)   *Push current contents of D6 into stack (line counter)
-        MOVE.B  #$01,D6
+        MOVEM.L D6,-(SP)    *Push D6 into stack (line counter)
+        MOVEM.L D3,-(SP)    *Push EA destination register into stack            
+        MOVE.B  #$01,D6     *Flag D6
+        MOVE.B  D1,D3       *Move source register into D3
         JSR     DataRegMode
-        MOVEM.L (SP)+,D6    *Pull current contents of stack back into D6
+        MOVEM.L (SP)+,D3    *Pull destination register back into D3
+        MOVEM.L (SP)+,D6    *Pull the line counter back into D6
         
         *manually output a comma here...
         LEA     Comma,A1        *Loads Comma into address register A1
@@ -845,7 +852,7 @@ BUCKET1110_BITS EQU $E
         
 
 *-----------------------------------------------------------        
-* EA operation size decoding functionality
+* EA operation size decoding functionality for immediate data
 *-----------------------------------------------------------   
 *'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
 WrapperSizeImmediate
@@ -916,7 +923,39 @@ LongSizeImmediate
         *output the immediate data to console with the hex-ascii converter
         JSR     HEXASCII
         
-        JMP     WrapperSizeImmediateEnd
+        JMP     WrapperSizeImmediateEnd        
+
+
+*-----------------------------------------------------------        
+* BCHG Size decoding functionality
+*----------------------------------------------------------- 
+BCHGSizeHelper
+        *Determine if the EA mode is a data register. If so, output '.L' to console...
+        CMP.B   #$00,D2
+        BEQ     BCHGLongSize
+        
+        *If the EA mode isn't a data register, WE MUST output a '.B' to console...
+        JMP     BCHGByteSize
+        
+*Used to get back to what we were doing, after dealing with the specific size
+BCHGSizeHelperEnd
+        RTS  
+        
+BCHGLongSize
+        *Output '.L' to console...
+        LEA     LongSize,A1 *Loads LongSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+
+        JMP     BCHGSizeHelperEnd
+        
+BCHGByteSize
+        *Output '.B' to console...
+        LEA     ByteSize,A1 *Loads ByteSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message   
+        
+        JMP     BCHGSizeHelperEnd
 
 
 *-----------------------------------------------------------        
@@ -953,34 +992,37 @@ AddrIndirectPostMode
         *Depending on the EA Register, output a different register number
         JSR     WrapperAddrIndirectPost
 
-        *need to read some flag, if this was called from a source EA decoding then jmp to 
-        *some wrapper (i'll define later)
+        *if this was called for a destination decoding then we are done decoding this        
+        *instruction, go get the next instruction
+        CMP.B   #$01,D6
+        BNE     GRAB_NEXT_OP
         
-        *else this was a destination EA decoding, we can just go get the next instruction
-        *since there is no more decoding to do for the current instruction
-        JMP     GRAB_NEXT_OP
+        *else this was a source decoding, rts back to we can keep decoding
+        RTS
 
 AddrIndirectPreMode
         *Depending on the EA Register, output a different register number
         JSR     WrapperAddrIndirectPre
 
-        *need to read some flag, if this was called from a source EA decoding then jmp to 
-        *some wrapper (i'll define later)
+        *if this was called for a destination decoding then we are done decoding this        
+        *instruction, go get the next instruction
+        CMP.B   #$01,D6
+        BNE     GRAB_NEXT_OP
         
-        *else this was a destination EA decoding, we can just go get the next instruction
-        *since there is no more decoding to do for the current instruction
-        JMP     GRAB_NEXT_OP
+        *else this was a source decoding, rts back to we can keep decoding
+        RTS
 
 AddrAbsoluteMode
         *Depending on the EA Register, output a different register number
         JSR     WrapperAddrAbsolute        
 
-        *need to read some flag, if this was called from a source EA decoding then jmp to 
-        *some wrapper (i'll define later)
+        *if this was called for a destination decoding then we are done decoding this        
+        *instruction, go get the next instruction
+        CMP.B   #$01,D6
+        BNE     GRAB_NEXT_OP
         
-        *else this was a destination EA decoding, we can just go get the next instruction
-        *since there is no more decoding to do for the current instruction
-        JMP     GRAB_NEXT_OP
+        *else this was a source decoding, rts back to we can keep decoding
+        RTS
         
 ImmediateDataMode
         *some code        
@@ -1384,12 +1426,7 @@ WordSizeAbsolute
         TRAP    #15
             
         *output the absolute mem address to console with the hex-ascii converter
-        JSR     HEXASCII
-        
-        *Print a new line, since this should be the last piece of data for an instruction
-        LEA     NewLine,A1
-        MOVE.B  #14,D0
-        TRAP    #15
+        JSR     HEXASCII        
         
         JMP     WrapperAddrAbsoluteEnd
 
@@ -1408,11 +1445,6 @@ LongSizeAbsolute
         *output the absolute mem address to console with the hex-ascii converter
         JSR     HEXASCII
         
-        *Print a new line, since this should be the last piece of data for an instruction
-        LEA     NewLine,A1
-        MOVE.B  #14,D0
-        TRAP    #15
-
         JMP     WrapperAddrAbsoluteEnd
         
 
@@ -1535,44 +1567,44 @@ WordSize    DC.B    '.W    ',0
 LongSize    DC.B    '.L    ',0
 
 *output for all destination data registers (0-7)
-OutDataReg0 DC.B    'D0',CR,LF,0
-OutDataReg1 DC.B    'D1',CR,LF,0
-OutDataReg2 DC.B    'D2',CR,LF,0
-OutDataReg3 DC.B    'D3',CR,LF,0
-OutDataReg4 DC.B    'D4',CR,LF,0
-OutDataReg5 DC.B    'D5',CR,LF,0
-OutDataReg6 DC.B    'D6',CR,LF,0
-OutDataReg7 DC.B    'D7',CR,LF,0
-
+OutDataReg0 DC.B    'D0',0
+OutDataReg1 DC.B    'D1',0
+OutDataReg2 DC.B    'D2',0
+OutDataReg3 DC.B    'D3',0
+OutDataReg4 DC.B    'D4',0
+OutDataReg5 DC.B    'D5',0
+OutDataReg6 DC.B    'D6',0
+OutDataReg7 DC.B    'D7',0
+        
 *output for all address indirect registers (0-7)
-OutAddrIndReg0  DC.B    '(A0)',CR,LF,0
-OutAddrIndReg1  DC.B    '(A1)',CR,LF,0
-OutAddrIndReg2  DC.B    '(A2)',CR,LF,0
-OutAddrIndReg3  DC.B    '(A3)',CR,LF,0
-OutAddrIndReg4  DC.B    '(A4)',CR,LF,0
-OutAddrIndReg5  DC.B    '(A5)',CR,LF,0
-OutAddrIndReg6  DC.B    '(A6)',CR,LF,0
-OutAddrIndReg7  DC.B    '(A7)',CR,LF,0
+OutAddrIndReg0  DC.B    '(A0)',0
+OutAddrIndReg1  DC.B    '(A1)',0
+OutAddrIndReg2  DC.B    '(A2)',0
+OutAddrIndReg3  DC.B    '(A3)',0
+OutAddrIndReg4  DC.B    '(A4)',0
+OutAddrIndReg5  DC.B    '(A5)',0
+OutAddrIndReg6  DC.B    '(A6)',0
+OutAddrIndReg7  DC.B    '(A7)',0
 
 *output for all address indirect post registers (0-7)
-OutAddrIndPoReg0    DC.B    '(A0)+',CR,LF,0
-OutAddrIndPoReg1    DC.B    '(A1)+',CR,LF,0
-OutAddrIndPoReg2    DC.B    '(A2)+',CR,LF,0
-OutAddrIndPoReg3    DC.B    '(A3)+',CR,LF,0
-OutAddrIndPoReg4    DC.B    '(A4)+',CR,LF,0
-OutAddrIndPoReg5    DC.B    '(A5)+',CR,LF,0
-OutAddrIndPoReg6    DC.B    '(A6)+',CR,LF,0
-OutAddrIndPoReg7    DC.B    '(A7)+',CR,LF,0
+OutAddrIndPoReg0    DC.B    '(A0)+',0
+OutAddrIndPoReg1    DC.B    '(A1)+',0
+OutAddrIndPoReg2    DC.B    '(A2)+',0
+OutAddrIndPoReg3    DC.B    '(A3)+',0
+OutAddrIndPoReg4    DC.B    '(A4)+',0
+OutAddrIndPoReg5    DC.B    '(A5)+',0
+OutAddrIndPoReg6    DC.B    '(A6)+',0
+OutAddrIndPoReg7    DC.B    '(A7)+',0
 
 *output for all address indirect pre registers (0-7)
-OutAddrIndPrReg0    DC.B    '-(A0)',CR,LF,0
-OutAddrIndPrReg1    DC.B    '-(A1)',CR,LF,0
-OutAddrIndPrReg2    DC.B    '-(A2)',CR,LF,0
-OutAddrIndPrReg3    DC.B    '-(A3)',CR,LF,0
-OutAddrIndPrReg4    DC.B    '-(A4)',CR,LF,0
-OutAddrIndPrReg5    DC.B    '-(A5)',CR,LF,0
-OutAddrIndPrReg6    DC.B    '-(A6)',CR,LF,0
-OutAddrIndPrReg7    DC.B    '-(A7)',CR,LF,0
+OutAddrIndPrReg0    DC.B    '-(A0)',0
+OutAddrIndPrReg1    DC.B    '-(A1)',0
+OutAddrIndPrReg2    DC.B    '-(A2)',0
+OutAddrIndPrReg3    DC.B    '-(A3)',0
+OutAddrIndPrReg4    DC.B    '-(A4)',0
+OutAddrIndPrReg5    DC.B    '-(A5)',0
+OutAddrIndPrReg6    DC.B    '-(A6)',0
+OutAddrIndPrReg7    DC.B    '-(A7)',0
 
 *output for a tab only (4 spaces)
 Tab DC.B    '    ',0
@@ -1588,8 +1620,8 @@ ShaBang DC.B    '#$',0
 Bang    DC.B    '$',0
 
 *current output for error messages
-BADEAMSG    DC.B    'BAD EA',CR,LF,0
-BADOPMSG    DC.B    'BAD OP',CR,LF,0
+BADEAMSG    DC.B    'BAD EA',0
+BADOPMSG    DC.B    'BAD OP',0
 INV_MSG		DC.B	'Improper command.',CR,LF,0
 INVSTRTMSG	DC.B	'Invalid start address.',CR,LF,0
 INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
@@ -1597,19 +1629,6 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 *~Font name~Courier New~

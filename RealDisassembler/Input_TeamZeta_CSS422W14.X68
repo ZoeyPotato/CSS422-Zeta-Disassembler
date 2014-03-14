@@ -9,14 +9,14 @@ START   ORG $7FC0
         MOVE.L  #$00008000,A0
 
 Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
-ADDI.B
-        *ADDI.B  #$AB,D1
-        *ADDI.B  #$CD,(A0)        
-        *ADDI.B  #$EF,(A0)+
-        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-        ADDI.B  #$0A,$8200
-        ADDI.B  #$0B,$00008100
-        
+*ADDI.B
+*        ADDI.B  #$AB,D1
+*        ADDI.B  #$CD,(A0)        
+*        ADDI.B  #$EF,(A0)+
+*        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+*        ADDI.B  #$0A,$8200
+*        ADDI.B  #$0B,$00008100
+*        
 *ADDI.W
 *        ADDI.W  #$AB,D1
 *        ADDI.W  #$CD,(A0)        
@@ -37,7 +37,7 @@ ADDI.B
 *        EORI.B  #$AB,D1
 *        EORI.B  #$CD,(A0)        
 *        EORI.B  #$EF,(A0)+
-*        EORI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+*        EORI.B  #$01,-(A0)    
 *        EORI.B  #$0A,$8200
 *        EORI.B  #$0B,$00008100
 *        
@@ -45,13 +45,19 @@ ADDI.B
 *        CMPI.B  #$AB,D1
 *        CMPI.B  #$CD,(A0)        
 *        CMPI.B  #$EF,(A0)+
-*        CMPI.B  #$01,-(A0)      *Weird bug when this is equal or less than #$08...
+*        CMPI.B  #$01,-(A0)    
 *        CMPI.B  #$0A,$8200
-*        CMPI.B  #$0B,$00008100        
+*        CMPI.B  #$0B,$00008100                
+*
+BCHG_dynamic
+        BCHG.L  D0,D1
+        BCHG.B  D0,(A0)
+        BCHG.B  D0,(A0)+
+        BCHG.B  D0,-(A0)
+        BCHG.B  D0,$8200
+        BCHG.B  D0,$00008100        
         
-        
-        *EORI    #12,D1
-        *BCHG.L  D0,D1   *Dynamic
+
         *BCHG.L  #12,D1  *Static
         *CMPI.B  #$12,D1         
         
