@@ -1,14 +1,22 @@
 *-------------------------------------------------------------
 * Title      :Team Zeta 68k Disassembler, CSS 422 Winter 2014
 * Written by :Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi
-* Date       :3/11/2014
+* Date       :3/14/2014
 * Description:
-* This program disassembles a subset of 68k assembly instructions. 
-* ***visit this later, describe what it does, how to use it, assumptions, etc.
+* This program disassembles a subset of 68k assembly instructions. After specifying
+* where the program to be disassembled is located, this program will disassemble
+* instructions of that program, and output the contents to console.
+*
+* For use with the EASy68K Emulator. To run, open this program in the emulator.
+* Hit 'F9' to execute. In the execution window, open the test input file, and press
+* 'F9' to run the program.
+*
+* This program will not disassemble every 68k instruction, only a subset of instructions
+* that we have currently implemented. See corresponding documentation for more details.
 *-------------------------------------------------------------
 ST_ADDR 	EQU $7FC6   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
-MAX_LINE	EQU		15		*Maximum number of instructions that can be 
+MAX_LINE	EQU 15		*Maximum number of instructions that can be displayed
 START   	ORG $1000   *Start program at provided location	
 			LEA	stack,SP
 			MOVE	#MAX_LINE,D6
@@ -372,7 +380,7 @@ BUCKET0000_BITS EQU $0
         CLR.L   D1
         *Load the first 4 bits (really a byte) of BUCKET0 into D1
         MOVE.B  #BUCKET0000_BITS,D1
-        *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0. 
+        *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0000. 
         *If equal, continue decoding. If not, branch to next bucket.
         CMP.B   D0,D1
         BNE     BUCKET_0001
@@ -381,7 +389,7 @@ BUCKET0000_BITS EQU $0
         *The zbit will be 1 if the bit is 0, and 0 if the bit is 1. 
         MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
         BTST.L  #$08,D0
-        BNE     IS_BCHG_D  *If the zbit was 0 (the 8th bit is 1), branch to ISBCHG_D
+        BNE     IS_BCHG_D  *If the zbit was 0 (the 8th bit is 1), branch to IS_BCHG_D
         
         *Now we can check bits 11-8 in the instruction and branch to different op-codes
         *depending on what the bits equal, without ambiguity due to BCHG(dynamic)
@@ -822,8 +830,8 @@ EA_CMPI
         
         *If the ea mode isn't equal to any of these, it is an invalid EA
         JMP     BADEACODE
-
-        
+      
+  
 *STARTS WITH 0001, MOVE.B-----------------------------------
 BUCKET_0001
 BUCKET0001_BITS EQU $1
@@ -845,11 +853,91 @@ BUCKET0011_BITS EQU $3
         *some code...
 
 
-*STARTS WITH 0100, MOVEM | MULS(L) | LEA | CLR | JSR | RTS--
+*-----------------------------------------------------------        
+* Bucket 0100:
+* STARTS WITH 0100, MOVEM | MULS(L)-------------------------
+*                   LEA | CLR | JSR | RTS-------------------
+*-----------------------------------------------------------
 BUCKET_0100
 BUCKET0100_BITS EQU $4
+        CLR.L   D1
+        *Load the first 4 bits (really a byte) of BUCKET0 into D1
+        MOVE.B  #BUCKET0100_BITS,D1
+        *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0100. 
+        *If equal, continue decoding. If not, branch to next bucket.
+        CMP.B   D0,D1
+        BNE     BUCKET_0101
 
-        *some code...
+        *Test the 8th bit in this instruction, if it is 1, then it is an LEA 
+        *The zbit will be 1 if the bit is 0, and 0 if the bit is 1.
+        MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
+        BTST.L  #$08,D0
+        BNE     IS_LEA  *If the zbit was 0 (the 8th bit is 1), branch to IS_LEA
+
+        *Some codes in this bucket can be determined by only bits 11-8, but some need
+        *11-6 to be unambiguous with others. First, solve codes that need bits 11-6...           
+        AND.W   #$0FC0,D0   *Mask out everything but bits 11-6
+        LSR.W   #$06,D0     *Move bits 11-6 into LSB position
+        
+        *Check bits 11-6 in the instruction and branch to different op-codes depending 
+        *on what the bits equal, without ambiguity
+        CMP.B   #$33,D0 *Is this a MOVEM(long)?
+        BEQ     IS_MOVEM
+        CMP.B   #$30,D0 *Is this a MULS(long)?
+        BEQ     IS_MULS_L
+        CMP.B   #$3A,D0 *Is this a JSR?
+        BEQ     IS_JSR
+        CMP.B   #$39,D0 *Is this a RTS?
+        BEQ     IS_RTS
+
+        *Now we can use only bits 11-8 and branch to different op-codes only needing these
+        *four bits to be unambiguous
+        LSR.W   #$02,D0 *Shift the 7-6 bits out, leaving only 11-8        
+        CMP.B   #$08,D0 *Is this a MOVEM(word)?
+        BEQ     IS_MOVEM
+        CMP.B   #$02,D0 *Is this a CLR?
+        BEQ     IS_CLR
+        
+        *If we get through all of the compares without finding the specific instruction,
+        *then this instruction is either not in our list of OP CODES to decode, or is an
+        *invalid instruction/syntax.
+        JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
+
+
+*Now we know this instruction is exactly MOVEM, lets set everything up for EA.
+IS_MOVEM
+
+EA_MOVEM
+
+
+*Now we know this instruction is exactly IS_MULS_L, lets set everything up for EA.
+IS_MULS_L
+
+EA_MULS_L
+
+
+*Now we know this instruction is exactly LEA, lets set everything up for EA.
+IS_LEA
+
+EA_LEA
+
+
+*Now we know this instruction is exactly CLR, lets set everything up for EA.
+IS_CLR
+
+EA_CLR
+
+
+*Now we know this instruction is exactly JSR, lets set everything up for EA.
+IS_JSR
+
+EA_JSR
+
+
+*Now we know this instruction is exactly RTS, lets set everything up for EA.
+IS_RTS
+
+EA_RTS
 
 
 *STARTS WITH 0101, SUBQ-------------------------------------
@@ -1707,6 +1795,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 
 *~Font name~Courier New~
 *~Font size~10~

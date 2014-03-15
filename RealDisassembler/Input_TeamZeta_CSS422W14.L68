@@ -1,6 +1,6 @@
 00007FC0 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/14/2014 5:30:08 AM
+Created On: 3/14/2014 5:41:11 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -61,20 +61,34 @@ Created On: 3/14/2014 5:30:08 AM
 00007FC6                            57  *        BCHG.B  D0,$8200
 00007FC6                            58  *        BCHG.B  D0,$00008100        
 00007FC6                            59  *               
-00007FC6                            60  BCHG_static
-00007FC6  0841 00AB                 61          BCHG.L  #$AB,D1
-00007FCA  0850 00CD                 62          BCHG.B  #$CD,(A0)
-00007FCE  0858 00EF                 63          BCHG.B  #$EF,(A0)+
-00007FD2  0860 0001                 64          BCHG.B  #$01,-(A0)
-00007FD6  0879 0002 00008200        65          BCHG.B  #$02,$8200
-00007FDE  0879 0003 00008100        66          BCHG.B  #$03,$00008100         
-00007FE6                            67  
-00007FE6                            68  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
-00007FE6                            69  
-00007FE6                            70          *BCHG.L  #12,D1  *Static
-00007FE6                            71          *CMPI.B  #$12,D1         
-00007FE6                            72          
-00007FE6                            73          END START
+00007FC6                            60  *BCHG_static
+00007FC6                            61  *        BCHG.L  #$AB,D1
+00007FC6                            62  *        BCHG.B  #$CD,(A0)
+00007FC6                            63  *        BCHG.B  #$EF,(A0)+
+00007FC6                            64  *        BCHG.B  #$01,-(A0)
+00007FC6                            65  *        BCHG.B  #$02,$8200
+00007FC6                            66  *        BCHG.B  #$03,$00008100  
+00007FC6                            67  *
+00007FC6                            68  LEA
+00007FC6  43D0                      69          LEA (A0),A1
+00007FC8  43F9 00008200             70          LEA $8200,A1
+00007FCE  43F9 00008100             71          LEA $00008100,A1
+00007FD4                            72          
+00007FD4                            73  *MULS_word
+00007FD4                            74  *        MULS.W  D0,D1
+00007FD4                            75  *        MULS.W  #$AB,D1
+00007FD4                            76  *        MULS.W  (A0),D1
+00007FD4                            77  *        MULS.W  (A0)+,D1
+00007FD4                            78  *        MULS.W  -(A0),D1
+00007FD4                            79  *        MULS.W  $8200,D1
+00007FD4                            80  *        MULS.W  $00008100,D1
+00007FD4                            81          
+00007FD4                            82  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
+00007FD4                            83  
+00007FD4                            84          *BCHG.L  #12,D1  *Static
+00007FD4                            85          *CMPI.B  #$12,D1         
+00007FD4                            86          
+00007FD4                            87          END START
 
 No errors detected
 No warnings generated
@@ -83,6 +97,6 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-BCHG_STATIC         7FC6
 BUCKET0000          7FC6
+LEA                 7FC6
 START               7FC0

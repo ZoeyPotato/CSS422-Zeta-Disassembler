@@ -57,14 +57,28 @@ Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 *        BCHG.B  D0,$8200
 *        BCHG.B  D0,$00008100        
 *               
-BCHG_static
-        BCHG.L  #$AB,D1
-        BCHG.B  #$CD,(A0)
-        BCHG.B  #$EF,(A0)+
-        BCHG.B  #$01,-(A0)
-        BCHG.B  #$02,$8200
-        BCHG.B  #$03,$00008100         
-
+*BCHG_static
+*        BCHG.L  #$AB,D1
+*        BCHG.B  #$CD,(A0)
+*        BCHG.B  #$EF,(A0)+
+*        BCHG.B  #$01,-(A0)
+*        BCHG.B  #$02,$8200
+*        BCHG.B  #$03,$00008100  
+*
+LEA
+        LEA (A0),A1
+        LEA $8200,A1
+        LEA $00008100,A1
+        
+*MULS_word
+*        MULS.W  D0,D1
+*        MULS.W  #$AB,D1
+*        MULS.W  (A0),D1
+*        MULS.W  (A0)+,D1
+*        MULS.W  -(A0),D1
+*        MULS.W  $8200,D1
+*        MULS.W  $00008100,D1
+        
 *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
 
         *BCHG.L  #12,D1  *Static
@@ -72,6 +86,7 @@ BCHG_static
         
         END START
         
+
 
 *~Font name~Courier New~
 *~Font size~10~
