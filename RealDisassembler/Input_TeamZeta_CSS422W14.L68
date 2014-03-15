@@ -1,117 +1,108 @@
 00007FC0 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/14/2014 10:11:00 PM
+Created On: 3/14/2014 11:49:59 PM
 
 00000000                             1  *-----------------------------------------------------------
-00000000                             2  * Title      :Brandon's Mini Disassembler Input
-00000000                             3  * Written by :Brandon Roth
-00000000                             4  * Date       :2/23/2014
-00000000                             5  * Description:***
+00000000                             2  * Title      :Team Zeta 68k Disassembler Test Input, CSS 422 Winter 2014
+00000000                             3  * Written by :Brandon Roth, Dwayne Honeycutt, Teresia Djunaedi
+00000000                             4  * Date       :3/14/2014
+00000000                             5  * Description:Used internally for testingour 68k Disassembler program.
 00000000                             6  *-----------------------------------------------------------
 00007FC0                             7  START   ORG $7FC0
 00007FC0                             8  
 00007FC0  207C 00008000              9          MOVE.L  #$00008000,A0
 00007FC6                            10  
 00007FC6                            11  Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
-00007FC6                            12  *ADDI.B
-00007FC6                            13  *        ADDI.B  #$AB,D1
-00007FC6                            14  *        ADDI.B  #$CD,(A0)        
-00007FC6                            15  *        ADDI.B  #$EF,(A0)+
-00007FC6                            16  *        ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FC6                            17  *        ADDI.B  #$0A,$8200
-00007FC6                            18  *        ADDI.B  #$0B,$00008100
-00007FC6                            19  *        
-00007FC6                            20  *ADDI.W
-00007FC6                            21  *        ADDI.W  #$AB,D1
-00007FC6                            22  *        ADDI.W  #$CD,(A0)        
-00007FC6                            23  *        ADDI.W  #$EF,(A0)+
-00007FC6                            24  *        ADDI.W  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FC6                            25  *        ADDI.W  #$0A,$8200
-00007FC6                            26  *        ADDI.W  #$0B,$00008100     
-00007FC6                            27  *
-00007FC6                            28  *ADDI.L
-00007FC6                            29  *        ADDI.L  #$AB,D1
-00007FC6                            30  *        ADDI.L  #$CD,(A0)        
-00007FC6                            31  *        ADDI.L  #$EF,(A0)+
-00007FC6                            32  *        ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
-00007FC6                            33  *        ADDI.L  #$0A,$8200
-00007FC6                            34  *        ADDI.L  #$0B,$00008100 
-00007FC6                            35  *
-00007FC6                            36  *EORI.B
-00007FC6                            37  *        EORI.B  #$AB,D1
-00007FC6                            38  *        EORI.B  #$CD,(A0)        
-00007FC6                            39  *        EORI.B  #$EF,(A0)+
-00007FC6                            40  *        EORI.B  #$01,-(A0)    
-00007FC6                            41  *        EORI.B  #$0A,$8200
-00007FC6                            42  *        EORI.B  #$0B,$00008100
-00007FC6                            43  *        
-00007FC6                            44  *CMPI.B
-00007FC6                            45  *        CMPI.B  #$AB,D1
-00007FC6                            46  *        CMPI.B  #$CD,(A0)        
-00007FC6                            47  *        CMPI.B  #$EF,(A0)+
-00007FC6                            48  *        CMPI.B  #$01,-(A0)    
-00007FC6                            49  *        CMPI.B  #$0A,$8200
-00007FC6                            50  *        CMPI.B  #$0B,$00008100                
-00007FC6                            51  *
-00007FC6                            52  *BCHG_dynamic
-00007FC6                            53  *        BCHG.L  D0,D1
-00007FC6                            54  *        BCHG.B  D0,(A0)
-00007FC6                            55  *        BCHG.B  D0,(A0)+
-00007FC6                            56  *        BCHG.B  D0,-(A0)
-00007FC6                            57  *        BCHG.B  D0,$8200
-00007FC6                            58  *        BCHG.B  D0,$00008100        
-00007FC6                            59  *               
-00007FC6                            60  *BCHG_static
-00007FC6                            61  *        BCHG.L  #$AB,D1
-00007FC6                            62  *        BCHG.B  #$CD,(A0)
-00007FC6                            63  *        BCHG.B  #$EF,(A0)+
-00007FC6                            64  *        BCHG.B  #$01,-(A0)
-00007FC6                            65  *        BCHG.B  #$02,$8200
-00007FC6                            66  *        BCHG.B  #$03,$00008100  
-00007FC6                            67  *
-00007FC6                            68  *LEA
-00007FC6                            69  *        LEA (A0),A1
-00007FC6                            70  *        LEA $8200,A1
-00007FC6                            71  *        LEA $00008100,A1
-00007FC6                            72  *
-00007FC6                            73  *CLR
-00007FC6                            74  *        CLR.L   D1
-00007FC6                            75  *        CLR.L   (A0)
-00007FC6                            76  *        CLR.L   (A0)+
-00007FC6                            77  *        CLR.L   -(A0)
-00007FC6                            78  *        CLR.L   $8200
-00007FC6                            79  *        CLR.L   $00008100
-00007FC6                            80  *
-00007FC6                            81  *JSR
-00007FC6                            82  *        JSR (A0)
-00007FC6                            83  *        JSR $8200
-00007FC6                            84  *        JSR $000008100
-00007FC6                            85  *
-00007FC6                            86  *RTS
-00007FC6                            87  *         RTS     
-00007FC6                            88  *        
-00007FC6                            89  SUBQ.B
-00007FC6  5301                      90          SUBQ.B  #$01,D1
-00007FC8  5548                      91          SUBQ.W  #$02,A0
-00007FCA  5710                      92          SUBQ.B  #$03,(A0)
-00007FCC  5918                      93          SUBQ.B  #$04,(A0)+
-00007FCE  5B20                      94          SUBQ.B  #$05,-(A0)
-00007FD0  5D39 00008200             95          SUBQ.B  #$06,$8200
-00007FD6  5F39 00008100             96          SUBQ.B  #$07,$00008100
-00007FDC                            97          
-00007FDC                            98  *MULS_word
-00007FDC                            99  *        MULS.W  D0,D1
-00007FDC                           100  *        MULS.W  (A0),D1
-00007FDC                           101  *        MULS.W  (A0)+,D1
-00007FDC                           102  *        MULS.W  -(A0),D1
-00007FDC                           103  *        MULS.W  $8200,D1
-00007FDC                           104  *        MULS.W  $00008100,D1
-00007FDC                           105  *        MULS.W  #$AB,D1
-00007FDC                           106          
-00007FDC                           107  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'       
-00007FDC                           108          
-00007FDC                           109          
-00007FDC                           110          END START
+00007FC6                            12  ADDI.B
+00007FC6  0601 00AB                 13          ADDI.B  #$AB,D1
+00007FCA  0610 00CD                 14          ADDI.B  #$CD,(A0)        
+00007FCE  0618 00EF                 15          ADDI.B  #$EF,(A0)+
+00007FD2  0620 0009                 16          ADDI.B  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FD6  0639 000A 00008200        17          ADDI.B  #$0A,$8200
+00007FDE  0639 000B 00008100        18          ADDI.B  #$0B,$00008100
+00007FE6                            19          
+00007FE6                            20  ADDI.W
+00007FE6  0641 00AB                 21          ADDI.W  #$AB,D1
+00007FEA  0650 00CD                 22          ADDI.W  #$CD,(A0)        
+00007FEE  0658 00EF                 23          ADDI.W  #$EF,(A0)+
+00007FF2  0660 0009                 24          ADDI.W  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+00007FF6  0679 000A 00008200        25          ADDI.W  #$0A,$8200
+00007FFE  0679 000B 00008100        26          ADDI.W  #$0B,$00008100     
+00008006                            27  
+00008006                            28  ADDI.L
+00008006  0681 000000AB             29          ADDI.L  #$AB,D1
+0000800C  0690 000000CD             30          ADDI.L  #$CD,(A0)        
+00008012  0698 000000EF             31          ADDI.L  #$EF,(A0)+
+00008018  06A0 00000009             32          ADDI.L  #$09,-(A0)      *Weird bug when this is equal or less than #$08...
+0000801E  06B9 0000000A 00008200    33          ADDI.L  #$0A,$8200
+00008028  06B9 0000000B 00008100    34          ADDI.L  #$0B,$00008100 
+00008032                            35  
+00008032                            36  EORI.B
+00008032  0A01 00AB                 37          EORI.B  #$AB,D1
+00008036  0A10 00CD                 38          EORI.B  #$CD,(A0)        
+0000803A  0A18 00EF                 39          EORI.B  #$EF,(A0)+
+0000803E  0A20 0001                 40          EORI.B  #$01,-(A0)    
+00008042  0A39 000A 00008200        41          EORI.B  #$0A,$8200
+0000804A  0A39 000B 00008100        42          EORI.B  #$0B,$00008100
+00008052                            43          
+00008052                            44  CMPI.B
+00008052  0C01 00AB                 45          CMPI.B  #$AB,D1
+00008056  0C10 00CD                 46          CMPI.B  #$CD,(A0)        
+0000805A  0C18 00EF                 47          CMPI.B  #$EF,(A0)+
+0000805E  0C20 0001                 48          CMPI.B  #$01,-(A0)    
+00008062  0C39 000A 00008200        49          CMPI.B  #$0A,$8200
+0000806A  0C39 000B 00008100        50          CMPI.B  #$0B,$00008100                
+00008072                            51  
+00008072                            52  BCHG_dynamic
+00008072  0141                      53          BCHG.L  D0,D1
+00008074  0150                      54          BCHG.B  D0,(A0)
+00008076  0158                      55          BCHG.B  D0,(A0)+
+00008078  0160                      56          BCHG.B  D0,-(A0)
+0000807A  0179 00008200             57          BCHG.B  D0,$8200
+00008080  0179 00008100             58          BCHG.B  D0,$00008100        
+00008086                            59                 
+00008086                            60  BCHG_static
+00008086  0841 00AB                 61          BCHG.L  #$AB,D1
+0000808A  0850 00CD                 62          BCHG.B  #$CD,(A0)
+0000808E  0858 00EF                 63          BCHG.B  #$EF,(A0)+
+00008092  0860 0001                 64          BCHG.B  #$01,-(A0)
+00008096  0879 0002 00008200        65          BCHG.B  #$02,$8200
+0000809E  0879 0003 00008100        66          BCHG.B  #$03,$00008100  
+000080A6                            67  
+000080A6                            68  Bucket0100  *BUCKET0100 TEST INSTRUCTIONS
+000080A6                            69  LEA
+000080A6  43D0                      70          LEA (A0),A1
+000080A8  43F9 00008200             71          LEA $8200,A1
+000080AE  43F9 00008100             72          LEA $00008100,A1
+000080B4                            73  
+000080B4                            74  CLR
+000080B4  4281                      75          CLR.L   D1
+000080B6  4290                      76          CLR.L   (A0)
+000080B8  4298                      77          CLR.L   (A0)+
+000080BA  42A0                      78          CLR.L   -(A0)
+000080BC  42B9 00008200             79          CLR.L   $8200
+000080C2  42B9 00008100             80          CLR.L   $00008100
+000080C8                            81  
+000080C8                            82  JSR
+000080C8  4E90                      83          JSR (A0)
+000080CA  4EB9 00008200             84          JSR $8200
+000080D0  4EB9 00008100             85          JSR $000008100
+000080D6                            86  
+000080D6                            87  RTS
+000080D6  4E75                      88           RTS     
+000080D8                            89  
+000080D8                            90  Bucket0101  *BUCKET0101 TEST INSTRUCTIONS 
+000080D8                            91  SUBQ.B
+000080D8  5301                      92          SUBQ.B  #$01,D1
+000080DA  5548                      93          SUBQ.W  #$02,A0
+000080DC  5710                      94          SUBQ.B  #$03,(A0)
+000080DE  5918                      95          SUBQ.B  #$04,(A0)+
+000080E0  5B20                      96          SUBQ.B  #$05,-(A0)
+000080E2  5D39 00008200             97          SUBQ.B  #$06,$8200
+000080E8  5F39 00008100             98          SUBQ.B  #$07,$00008100
+000080EE                            99         
+000080EE                           100                          
+000080EE                           101          END START
 
 No errors detected
 No warnings generated
@@ -120,6 +111,19 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
+ADDI.B              7FC6
+ADDI.L              8006
+ADDI.W              7FE6
+BCHG_DYNAMIC        8072
+BCHG_STATIC         8086
 BUCKET0000          7FC6
+BUCKET0100          80A6
+BUCKET0101          80D8
+CLR                 80B4
+CMPI.B              8052
+EORI.B              8032
+JSR                 80C8
+LEA                 80A6
+RTS                 80D6
 START               7FC0
-SUBQ.B              7FC6
+SUBQ.B              80D8

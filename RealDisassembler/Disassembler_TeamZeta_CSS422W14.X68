@@ -293,8 +293,6 @@ NUM_F		LEA		PRNTF,A1
 *-----------------------------------------------------------        
 * Start of Disassembler
 *-----------------------------------------------------------
-        *FOR DEBUGGING ONLY!!!
-        MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
 CLR_D6	CLR.L	D6
 		MOVE	#MAX_LINE,D6
         LEA     NewLine,A1  *Loads NewLine into address register A1
@@ -379,6 +377,7 @@ INV2		MOVE.B	#0,D3		*Reset bad flag
 			MOVE	#14,D0
 			TRAP	#15
 			BRA		CONT_Q
+
 
 *-----------------------------------------------------------        
 * Bucket 0000:
@@ -2252,7 +2251,6 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
