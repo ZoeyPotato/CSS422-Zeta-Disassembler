@@ -440,7 +440,7 @@ IS_ADDI
         *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
         CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
@@ -506,7 +506,7 @@ IS_ANDI
         *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
         CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
@@ -572,7 +572,7 @@ IS_EORI
         *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
         CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
@@ -638,13 +638,13 @@ IS_BCHG_D
         CLR.L   D1
         MOVE.W  D7,D1       *Move the WHOLE instruction to D1
         AND.W   #$0E00,D1   *Mask out everything but the EA source register bits
-        LSR.B   #$08,D1     *Shift the EA source register bits into LSB
-        LSR.B   #$01,D1
+        LSR.W   #$08,D1     *Shift the EA source register bits into LSB
+        LSR.W   #$01,D1
 
         *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
         CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
@@ -721,7 +721,7 @@ IS_BCHG_S
         *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
         CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
@@ -789,7 +789,7 @@ IS_CMPI
         *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
         CLR.L   D2
         MOVE.W  D7,D2       *Move the WHOLE instruction to D2
-        AND.W   #$003C,D2   *Mask out everything but the EA mode bits
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
         LSR.B   #$03,D2     *Shift the EA mode bits into LSB
                 
         *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
@@ -918,10 +918,73 @@ EA_MULS_L
 
 *Now we know this instruction is exactly LEA, lets set everything up for EA.
 IS_LEA
+        *Check bits 7 and 6, these should be 1 and 1. If not, this instruction is
+        *invalid, branch to BADOPCODE
+        MOVE.W  D7,D0      *Move the WHOLE instruction back to D0
+        BTST.L  #$07,D0
+        BEQ     BADOPCODE  *If the zbit was 1 (the 7th bit is 0), branch to BADOPCODE
+        BTST.L  #$06,D0
+        BEQ     BADOPCODE  *If the zbit was 1 (the 6th bit is 0), branch to BADOPCODE
+        
+        *Output 'LEA' to console...
+        LEA     LEA,A1         *Loads LEA into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        
+        *Should have a valid LEA op code. Set data up for EA.      
+        
+        *Set D1 to the EA destination register located in bits 11-9 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$0E00,D1   *Mask out everything but the EA destination register bits
+        LSR.W   #$08,D1     *Shift the EA destination register bits into LSB
+        LSR.W   #$01,D1
+
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+
+        JMP     EA_LEA       
 
 EA_LEA
+        *Decode the ea bits of LEA. Assuming D2 holds the EA mode, and D3 holds the EA 
+        *register.                                        
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        MOVEM.L D6,-(SP)    *Push D6 into stack (line counter)
+        MOVE.B  #$01,D6     *Flag D6 so that we come back
+        
+        CMP.B   #$02,D2
+        BEQ     LEA_AddrIndirectWrapper *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$07,D2
+        BEQ     LEA_AddrAbsoluteWrapper *If EA mode is an addr absolute word/long, output that
 
-
+EA_LEA_WrapperEnd        
+        MOVEM.L (SP)+,D6    *Pull the line counter back into D6
+                
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        *output the destination address register to console
+        *Overwrite the EA register with destination register (no longer need D3 at this point)
+        MOVE.B  D1,D3
+        JSR     AddrRegMode
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
+        
+        
 *Now we know this instruction is exactly CLR, lets set everything up for EA.
 IS_CLR
 
@@ -1125,6 +1188,23 @@ BCHGImmediate
 
 
 *-----------------------------------------------------------        
+* LEA Wrappers to conform to design of EA mode/register as destination operand. 
+* LEA is weird in that its EA mode/register is used as a source operand.
+*-----------------------------------------------------------        
+*This conforms LEA to the JSR requirement of AddrIndirectMode. JMPs back to LEA after the JSR.
+LEA_AddrIndirectWrapper
+        JSR     AddrIndirectMode
+        
+        JMP     EA_LEA_WrapperEnd
+        
+*This conforms LEA to the JSR requirement of AddrAbsoluteMode. JMPs back to LEA after the JSR.
+LEA_AddrAbsoluteWrapper
+        JSR     AddrAbsoluteMode
+        
+        JMP     EA_LEA_WrapperEnd
+
+
+*-----------------------------------------------------------        
 * EA Mode/EA Register decoding functionality
 *-----------------------------------------------------------        
 DataRegMode
@@ -1139,8 +1219,16 @@ DataRegMode
         *else this was a source decoding, rts back to we can keep decoding
         RTS
 
-AddrDirectMode
-        *some code...
+AddrRegMode
+        JSR     WrapperAddrReg
+        
+        *if this was called for a destination decoding then we are done decoding this        
+        *instruction, go get the next instruction
+        CMP.B   #$01,D6
+        BNE     GRAB_NEXT_OP
+        
+        *else this was a source decoding, rts back to we can keep decoding
+        RTS
 
 AddrIndirectMode
         *Depending on the EA Register, output a different register number
@@ -1284,6 +1372,98 @@ DataReg7
         TRAP    #15
         
         JMP     WrapperDataRegEnd
+
+
+*-----------------------------------------------------------        
+* Output logic for all Address Registers (0-7)
+*-----------------------------------------------------------     
+*'Wrapper' func used for outputing the correct register. Used to do the nasty branching
+WrapperAddrReg
+        *Depending on the EA Register, output a different register number
+        CMP.B   #$00,D3
+        BEQ     AddrReg0
+        
+        CMP.B   #$01,D3
+        BEQ     AddrReg1
+        
+        CMP.B   #$02,D3
+        BEQ     AddrReg2
+        
+        CMP.B   #$03,D3
+        BEQ     AddrReg3
+        
+        CMP.B   #$04,D3
+        BEQ     AddrReg4
+        
+        CMP.B   #$05,D3
+        BEQ     AddrReg5
+        
+        CMP.B   #$06,D3
+        BEQ     AddrReg6
+        
+        CMP.B   #$07,D3
+        BEQ     AddrReg7
+
+*Used to get back to 'AddrRegMode', after dealing with the specific register
+WrapperAddrRegEnd
+        RTS        
+
+AddrReg0
+        *Output the specific address indirect register...
+        LEA     OutAddrReg0,A1   	*Loads AddrReg0 into address register A1
+        MOVE.B  #14,D0              *Moves the number 14 into data register D0
+        TRAP    #15                 *Displays Message        
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg1
+        LEA     OutAddrReg1,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg2
+        LEA     OutAddrReg2,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg3
+        LEA     OutAddrReg3,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg4
+        LEA     OutAddrReg4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg5
+        LEA     OutAddrReg5,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg6
+        LEA     OutAddrReg6,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
+
+AddrReg7
+        LEA     OutAddrReg7,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        JMP     WrapperAddrRegEnd
 
 
 *-----------------------------------------------------------        
@@ -1580,36 +1760,42 @@ WrapperAddrAbsoluteEnd
         RTS
 
 WordSizeAbsolute        
-        MOVE.W  (A0)+,D4    *read in next word, data is that word
-        
-        *Move #$01 into D1 to specify this as a word, used for hextoascii conversion...
-        CLR.L   D1
-        MOVE.B  #$01,D1     
+        MOVE.W  (A0)+,D4    *read in next word, data is that word        
             
         *Output ',$' just after source operand
         LEA     Bang,A1
         MOVE.B  #14,D0
         TRAP    #15
             
+        *Push D1 into stack, in case something was using it
+        MOVEM.L D1,-(SP)
+        *Move #$01 into D1 to specify this as a word, used for hextoascii conversion...
+        CLR.L   D1
+        MOVE.B  #$01,D1
+            
         *output the absolute mem address to console with the hex-ascii converter
-        JSR     HEXASCII        
+        JSR     HEXASCII
+        MOVEM.L (SP)+,D1    *Pull D1 back out from the stack
         
         JMP     WrapperAddrAbsoluteEnd
 
 LongSizeAbsolute
-        MOVE.L  (A0)+,D4    *read in next long, data is that long
-                
-        *Move #$10 into D1 to specify this as a long, used for hextoascii conversion...
-        CLR.L   D1
-        MOVE.B  #$10,D1
+        MOVE.L  (A0)+,D4    *read in next long, data is that long                
                 
         *Output ',$' just after source operand
         LEA     Bang,A1
         MOVE.B  #14,D0
         TRAP    #15  
         
+        *Push D1 into stack, in case something was using it
+        MOVEM.L D1,-(SP)
+        *Move #$10 into D1 to specify this as a long, used for hextoascii conversion...
+        CLR.L   D1
+        MOVE.B  #$10,D1
+            
         *output the absolute mem address to console with the hex-ascii converter
         JSR     HEXASCII
+        MOVEM.L (SP)+,D1    *Pull D1 back out from the stack
         
         JMP     WrapperAddrAbsoluteEnd
         
@@ -1721,18 +1907,26 @@ PRNTE	DC.B	'E',0
 PRNTF	DC.B	'F',0
 
 *output for all OPCODEs
+*Bucket 0000
 ADDI    DC.B    'ADDI',0
 ANDI    DC.B    'ANDI',0
 EORI    DC.B    'EORI',0
 BCHG    DC.B    'BCHG',0
 CMPI    DC.B    'CMPI',0
+*Bucket 0100
+MOVEM   DC.B    'MOVEM',0
+MULS    DC.B    'MULS',0
+LEA     DC.B    'LEA      ',0   *Need spaces here since LEA has no size
+CLR     DC.B    'CLR',0
+JSR     DC.B    'JSR      ',0   *Need spaces here since JSR has no size
+RTS     DC.B    'RTS      ',0   *Need spaces here since RTS has no size
 
 *output for the size of the operation
 ByteSize    DC.B    '.B    ',0
 WordSize    DC.B    '.W    ',0
 LongSize    DC.B    '.L    ',0
 
-*output for all destination data registers (0-7)
+*output for all data registers (0-7)
 OutDataReg0 DC.B    'D0',0
 OutDataReg1 DC.B    'D1',0
 OutDataReg2 DC.B    'D2',0
@@ -1741,6 +1935,16 @@ OutDataReg4 DC.B    'D4',0
 OutDataReg5 DC.B    'D5',0
 OutDataReg6 DC.B    'D6',0
 OutDataReg7 DC.B    'D7',0
+
+*output for all address registers (0-7)
+OutAddrReg0 DC.B    'A0',0
+OutAddrReg1 DC.B    'A1',0
+OutAddrReg2 DC.B    'A2',0
+OutAddrReg3 DC.B    'A3',0
+OutAddrReg4 DC.B    'A4',0
+OutAddrReg5 DC.B    'A5',0
+OutAddrReg6 DC.B    'A6',0
+OutAddrReg7 DC.B    'A7',0
         
 *output for all address indirect registers (0-7)
 OutAddrIndReg0  DC.B    '(A0)',0
@@ -1795,8 +1999,6 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
