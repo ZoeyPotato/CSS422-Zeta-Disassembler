@@ -16,11 +16,11 @@
 *-------------------------------------------------------------
 ST_ADDR 	EQU $7FC6   *Starting address of input test file
 STACK   	EQU $7000   *Stack location
-MAX_LINE	EQU 15		*Maximum number of instructions that can be displayed
+MAX_LINE	EQU 32		*Maximum number of instructions that can be displayed
 START   	ORG $1000   *Start program at provided location	
 			LEA	stack,SP
 			MOVE	#MAX_LINE,D6
-
+			
 
 *-----------------------------------------------------------
 * Start of I/O
@@ -29,9 +29,10 @@ START   	ORG $1000   *Start program at provided location
         	MOVE.B  #14,D0      *Moves the number 14 into data register D0
         	TRAP    #15         *Displays Message
         
-loop_1     	MOVE	#0,D0		
+loop_1     	MOVE	#0,D0
+			MOVE	#0,D3		
 			LEA		STARTASSEM,A1	*Fix the bug that takes the input but outputs the input back out.
-        	MOVE.B	#14,D0
+        	MOVE.B	#13,D0
         	TRAP	#15    
         	MOVE	#2,D0
         	LEA		CMD_HLD,A1	*Store the command in a buffer
@@ -294,16 +295,22 @@ NUM_F		LEA		PRNTF,A1
 *-----------------------------------------------------------
         *FOR DEBUGGING ONLY!!!
         MOVEA.L #ST_ADDR,A0 *Load starting location of test input file into A0
+CLR_D6	CLR.L	D6
+		MOVE	#MAX_LINE,D6
+        LEA     NewLine,A1  *Loads NewLine into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+		BRA		loop_1
         
 GRAB_NEXT_OP
         *Check and see if A0 == end of test address. If so, we need to end.
 		MOVE.L	A0,D7
 		MOVEA.L	PROGEND,A2
         CMP.L	A2,D7  		* Check and see if A0 == end of test address. 
-        BGE     loop_1      * Ask user if they want to do the disassembler again
-        CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
+        BGE		CLR_D6		* Ask user if they want to do the disassembler again
+        CMPI.L	#02,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
-        SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
+CONT_OP SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
 
         *Output a newline to console...        
         LEA     NewLine,A1  *Loads NewLine into address register A1
@@ -353,12 +360,14 @@ CONT_Q		LEA		QUES_CONT,A1
 	        BNE		INVALID1
 			CMPI.B	#$59,CONT	*Checks for uppercase Y
 			BNE		CHECK_Y
+			CLR.L	D6
 			MOVE	#MAX_LINE,D6	*Resets counter
-			RTS
+			BRA		CONT_OP
 CHECK_Y		CMPI.B	#$79,(A1)	*Checks for lowercase y
 			BNE		CHECK_N
+			CLR.L	D6
 			MOVE	#MAX_LINE,D6	*Resets counter
-			RTS
+			BRA		CONT_OP
 CHECK_N		CMPI.B	#$4E,(A1)	*Checks for uppercase N
 			BEQ		loop_1
 			CMPI.B	#$6E,(A1)	*Checks for lowercase n
@@ -2145,6 +2154,7 @@ INVENDMSG	DC.B	'Invalid end address.',CR,LF,0
         
         END     START
         
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
