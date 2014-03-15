@@ -70,13 +70,21 @@ Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 *        LEA $8200,A1
 *        LEA $00008100,A1
 *
-CLR
-        CLR.L   D1
-        CLR.L   (A0)
-        CLR.L   (A0)+
-        CLR.L   -(A0)
-        CLR.L   $8200
-        CLR.L   $00008100
+*CLR
+*        CLR.L   D1
+*        CLR.L   (A0)
+*        CLR.L   (A0)+
+*        CLR.L   -(A0)
+*        CLR.L   $8200
+*        CLR.L   $00008100
+*
+*JSR
+*        JSR (A0)
+*        JSR $8200
+*        JSR $000008100
+*
+RTS
+         RTS     
         
 *MULS_word
 *        MULS.W  D0,D1
@@ -87,10 +95,8 @@ CLR
 *        MULS.W  $00008100,D1
 *        MULS.W  #$AB,D1
         
-*JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
-
-        *BCHG.L  #12,D1  *Static
-        *CMPI.B  #$12,D1         
+*JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'       
+        
         
         END START
         

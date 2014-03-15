@@ -1,6 +1,6 @@
 00007FC0 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/14/2014 8:54:59 PM
+Created On: 3/14/2014 9:17:30 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -74,29 +74,35 @@ Created On: 3/14/2014 8:54:59 PM
 00007FC6                            70  *        LEA $8200,A1
 00007FC6                            71  *        LEA $00008100,A1
 00007FC6                            72  *
-00007FC6                            73  CLR
-00007FC6  4281                      74          CLR.L   D1
-00007FC8  4290                      75          CLR.L   (A0)
-00007FCA  4298                      76          CLR.L   (A0)+
-00007FCC  42A0                      77          CLR.L   -(A0)
-00007FCE  42B9 00008200             78          CLR.L   $8200
-00007FD4  42B9 00008100             79          CLR.L   $00008100
-00007FDA                            80          
-00007FDA                            81  *MULS_word
-00007FDA                            82  *        MULS.W  D0,D1
-00007FDA                            83  *        MULS.W  (A0),D1
-00007FDA                            84  *        MULS.W  (A0)+,D1
-00007FDA                            85  *        MULS.W  -(A0),D1
-00007FDA                            86  *        MULS.W  $8200,D1
-00007FDA                            87  *        MULS.W  $00008100,D1
-00007FDA                            88  *        MULS.W  #$AB,D1
-00007FDA                            89          
-00007FDA                            90  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
-00007FDA                            91  
-00007FDA                            92          *BCHG.L  #12,D1  *Static
-00007FDA                            93          *CMPI.B  #$12,D1         
-00007FDA                            94          
-00007FDA                            95          END START
+00007FC6                            73  *CLR
+00007FC6                            74  *        CLR.L   D1
+00007FC6                            75  *        CLR.L   (A0)
+00007FC6                            76  *        CLR.L   (A0)+
+00007FC6                            77  *        CLR.L   -(A0)
+00007FC6                            78  *        CLR.L   $8200
+00007FC6                            79  *        CLR.L   $00008100
+00007FC6                            80  *
+00007FC6                            81  *JSR
+00007FC6                            82  *        JSR (A0)
+00007FC6                            83  *        JSR $8200
+00007FC6                            84  *        JSR $000008100
+00007FC6                            85  *
+00007FC6                            86  RTS
+00007FC6  4E75                      87           RTS     
+00007FC8                            88          
+00007FC8                            89  *MULS_word
+00007FC8                            90  *        MULS.W  D0,D1
+00007FC8                            91  *        MULS.W  (A0),D1
+00007FC8                            92  *        MULS.W  (A0)+,D1
+00007FC8                            93  *        MULS.W  -(A0),D1
+00007FC8                            94  *        MULS.W  $8200,D1
+00007FC8                            95  *        MULS.W  $00008100,D1
+00007FC8                            96  *        MULS.W  #$AB,D1
+00007FC8                            97          
+00007FC8                            98  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'       
+00007FC8                            99          
+00007FC8                           100          
+00007FC8                           101          END START
 
 No errors detected
 No warnings generated
@@ -106,5 +112,5 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 BUCKET0000          7FC6
-CLR                 7FC6
+RTS                 7FC6
 START               7FC0

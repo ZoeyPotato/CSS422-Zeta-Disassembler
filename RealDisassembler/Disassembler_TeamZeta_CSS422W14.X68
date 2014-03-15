@@ -1045,15 +1045,62 @@ EA_CLR
 
 
 *Now we know this instruction is exactly JSR, lets set everything up for EA.
-IS_JSR
+IS_JSR        
+        *Output 'JSR' to console...
+        LEA     JSR,A1      *Loads JSR into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        
+        *Should have a valid JSR op code. Set data up for EA.
+        
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+        
+        JMP     EA_CLR
 
 EA_JSR
+        *Decode the ea bits of JSR. Assuming D1 holds the size, D2 holds the EA mode,
+        *and D3 holds the EA register.               
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+                       
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *Now we know this instruction is exactly RTS, lets set everything up for EA.
 IS_RTS
+        *Verify bits 5-0 of this instruction. If its not equal to %11 0101, it is an
+        *invalid op code        
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$003F,D2   *Mask out everything but bits 5-0
+        
+        *Bits 5-0 aren't equal to $35, bad op code
+        CMP.B   #$35,D2
+        BNE     BADOPCODE
 
-EA_RTS
+        *Output 'RTS' to console...
+        LEA     RTS,A1      *Loads RTS into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+                        
+        *Should have a valid RTS op code. Note: No EA decoding is needed for RTS!        
+        JMP     GRAB_NEXT_OP
 
 
 *STARTS WITH 0101, SUBQ-------------------------------------
