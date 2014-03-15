@@ -388,7 +388,7 @@ INV2		MOVE.B	#0,D3		*Reset bad flag
 BUCKET_0000
 BUCKET0000_BITS EQU $0
         CLR.L   D1
-        *Load the first 4 bits (really a byte) of BUCKET0 into D1
+        *Load the first 4 bits (really a byte) of BUCKET0000 into D1
         MOVE.B  #BUCKET0000_BITS,D1
         *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0000. 
         *If equal, continue decoding. If not, branch to next bucket.
@@ -871,7 +871,7 @@ BUCKET0011_BITS EQU $3
 BUCKET_0100
 BUCKET0100_BITS EQU $4
         CLR.L   D1
-        *Load the first 4 bits (really a byte) of BUCKET0 into D1
+        *Load the first 4 bits (really a byte) of BUCKET0100 into D1
         MOVE.B  #BUCKET0100_BITS,D1
         *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0100. 
         *If equal, continue decoding. If not, branch to next bucket.
@@ -1029,8 +1029,7 @@ EA_CLR
         *Decode the ea bits of CLR. Assuming D1 holds the size, D2 holds the EA mode,
         *and D3 holds the EA register.
         
-        *Determine how much data to read in, depending on the size of the operation
-        *output the size of the operation and the immediate data to console
+        *output the size of the operation to console
         JSR     WrapperSize       
         
         *Determine which EA mode and thus Register/Mem Address this instruction used
@@ -1115,8 +1114,106 @@ IS_RTS
 *STARTS WITH 0101, SUBQ-------------------------------------
 BUCKET_0101
 BUCKET0101_BITS EQU $5
+        CLR.L   D1
+        *Load the first 4 bits (really a byte) of BUCKET0101 into D1
+        MOVE.B  #BUCKET0101_BITS,D1
+        *Compare the first 4 bits of the CURRENT instruction with first 4 of BUCKET0101. 
+        *If equal, continue decoding. If not, branch to next bucket.
+        CMP.B   D0,D1
+        BNE     BUCKET_0110
 
-        *some code...
+        *Test the 8th bit in this instruction, if it is 1, then it is a SUBQ 
+        *The zbit will be 1 if the bit is 0, and 0 if the bit is 1.
+        MOVE.W  D7,D0   *Move the WHOLE instruction back to D0
+        BTST.L  #$08,D0
+        BNE     IS_SUBQ *If the zbit was 0 (the 8th bit is 1), branch to IS_LEA
+        
+        *If we get through all of the compares without finding the specific instruction,
+        *then this instruction is either not in our list of OP CODES to decode, or is an
+        *invalid instruction/syntax.
+        JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
+
+
+IS_SUBQ
+        *Verify the size of this operation. If incorrect size (%11), then bad opcode!
+        *Set D1 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$00C0,D1   *Mask out everything but the size bits
+        LSR.B   #$06,D1     *Shift the size bits into LSB
+        
+        CMP.B   #$03,D1     *Compare the size bits to $3
+        BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)                        
+        
+        *Output 'SUBQ' to console...
+        LEA     SUBQ,A1         *Loads SUBQ into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+                
+                
+        *Should have a valid SUBQ op code. Set data up for EA.
+
+        *Set D4 to the immediate data located in bits 11-9 of the instruction
+        CLR.L   D4
+        MOVE.W  D7,D4       *Move the WHOLE instruction to D0
+        AND.W   #$0E00,D4   *Mask out everything but the immediate data bits
+        LSR.W   #$08,D4     *Shift the immediate data bits into LSB
+        LSR.W   #$01,D4
+
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+
+        JMP     EA_SUBQ
+
+EA_SUBQ
+        *Decode the ea bits of SUBQ. Assuming D4 holds the immediate data D1 holds the size, 
+        *D2 holds the EA mode, and D3 holds the EA register.                    
+    
+        *output the size of the operation to console
+        JSR     WrapperSize
+            
+        *Output '#$' just before the immediate data
+        LEA     ShaBang,A1
+        MOVE.B  #14,D0
+        TRAP    #15            
+            
+        *output the immediate data for this instruction with the hex-ascii converter
+        JSR     HEXASCII
+                        
+        *manually output a comma here...
+        LEA     Comma,A1        *Loads Comma into address register A1
+        MOVE.B  #14,D0          *Moves the number 14 into data register D0
+        TRAP    #15             *Displays Message
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$01,D2
+        BEQ     AddrRegMode *If EA mode is an address register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *STARTS WITH 0110, BCC--------------------------------------
@@ -1173,7 +1270,7 @@ BUCKET1110_BITS EQU $E
 *The given OP CODE doesn't fall into any buckets, this is an invalid opcode
 *for this disassembler, jump to BADOPCODE and let I/O take care of it
         JMP     BADOPCODE  
-        
+
 
 *-----------------------------------------------------------        
 * EA operation size decoding functionality for immediate data
@@ -1256,7 +1353,6 @@ LongSizeImmediate
 *-----------------------------------------------------------   
 *'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
 WrapperSize
-        CLR.L   D4
         *Depending on the EA size, choose which size to decode
         CMP.B   #$00,D1
         BEQ     ByteSizeOp
@@ -2074,7 +2170,9 @@ MULS    DC.B    'MULS',0
 LEA     DC.B    'LEA      ',0   *Need spaces here since LEA has no size
 CLR     DC.B    'CLR',0
 JSR     DC.B    'JSR      ',0   *Need spaces here since JSR has no size
-RTS     DC.B    'RTS      ',0   *Need spaces here since RTS has no size
+RTS     DC.B    'RTS',0
+*Bucket 0101
+SUBQ    DC.B    'SUBQ',0
 
 *output for the size of the operation
 ByteSize    DC.B    '.B    ',0

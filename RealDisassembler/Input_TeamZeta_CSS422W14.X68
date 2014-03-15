@@ -83,8 +83,17 @@ Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 *        JSR $8200
 *        JSR $000008100
 *
-RTS
-         RTS     
+*RTS
+*         RTS     
+*        
+SUBQ.B
+        SUBQ.B  #$01,D1
+        SUBQ.W  #$02,A0
+        SUBQ.B  #$03,(A0)
+        SUBQ.B  #$04,(A0)+
+        SUBQ.B  #$05,-(A0)
+        SUBQ.B  #$06,$8200
+        SUBQ.B  #$07,$00008100
         
 *MULS_word
 *        MULS.W  D0,D1

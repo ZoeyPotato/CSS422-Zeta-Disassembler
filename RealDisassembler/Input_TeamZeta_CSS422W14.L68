@@ -1,6 +1,6 @@
 00007FC0 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.14.00
-Created On: 3/14/2014 9:17:30 PM
+Created On: 3/14/2014 10:11:00 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Brandon's Mini Disassembler Input
@@ -87,22 +87,31 @@ Created On: 3/14/2014 9:17:30 PM
 00007FC6                            83  *        JSR $8200
 00007FC6                            84  *        JSR $000008100
 00007FC6                            85  *
-00007FC6                            86  RTS
-00007FC6  4E75                      87           RTS     
-00007FC8                            88          
-00007FC8                            89  *MULS_word
-00007FC8                            90  *        MULS.W  D0,D1
-00007FC8                            91  *        MULS.W  (A0),D1
-00007FC8                            92  *        MULS.W  (A0)+,D1
-00007FC8                            93  *        MULS.W  -(A0),D1
-00007FC8                            94  *        MULS.W  $8200,D1
-00007FC8                            95  *        MULS.W  $00008100,D1
-00007FC8                            96  *        MULS.W  #$AB,D1
-00007FC8                            97          
-00007FC8                            98  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'       
-00007FC8                            99          
-00007FC8                           100          
-00007FC8                           101          END START
+00007FC6                            86  *RTS
+00007FC6                            87  *         RTS     
+00007FC6                            88  *        
+00007FC6                            89  SUBQ.B
+00007FC6  5301                      90          SUBQ.B  #$01,D1
+00007FC8  5548                      91          SUBQ.W  #$02,A0
+00007FCA  5710                      92          SUBQ.B  #$03,(A0)
+00007FCC  5918                      93          SUBQ.B  #$04,(A0)+
+00007FCE  5B20                      94          SUBQ.B  #$05,-(A0)
+00007FD0  5D39 00008200             95          SUBQ.B  #$06,$8200
+00007FD6  5F39 00008100             96          SUBQ.B  #$07,$00008100
+00007FDC                            97          
+00007FDC                            98  *MULS_word
+00007FDC                            99  *        MULS.W  D0,D1
+00007FDC                           100  *        MULS.W  (A0),D1
+00007FDC                           101  *        MULS.W  (A0)+,D1
+00007FDC                           102  *        MULS.W  -(A0),D1
+00007FDC                           103  *        MULS.W  $8200,D1
+00007FDC                           104  *        MULS.W  $00008100,D1
+00007FDC                           105  *        MULS.W  #$AB,D1
+00007FDC                           106          
+00007FDC                           107  *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'       
+00007FDC                           108          
+00007FDC                           109          
+00007FDC                           110          END START
 
 No errors detected
 No warnings generated
@@ -112,5 +121,5 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 BUCKET0000          7FC6
-RTS                 7FC6
 START               7FC0
+SUBQ.B              7FC6
