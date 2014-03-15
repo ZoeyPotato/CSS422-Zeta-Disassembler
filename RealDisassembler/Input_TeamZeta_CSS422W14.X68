@@ -65,19 +65,27 @@ Bucket0000  *BUCKET0000 TEST INSTRUCTIONS
 *        BCHG.B  #$02,$8200
 *        BCHG.B  #$03,$00008100  
 *
-LEA
-        LEA (A0),A1
-        LEA $8200,A1
-        LEA $00008100,A1
+*LEA
+*        LEA (A0),A1
+*        LEA $8200,A1
+*        LEA $00008100,A1
+*
+CLR
+        CLR.L   D1
+        CLR.L   (A0)
+        CLR.L   (A0)+
+        CLR.L   -(A0)
+        CLR.L   $8200
+        CLR.L   $00008100
         
 *MULS_word
 *        MULS.W  D0,D1
-*        MULS.W  #$AB,D1
 *        MULS.W  (A0),D1
 *        MULS.W  (A0)+,D1
 *        MULS.W  -(A0),D1
 *        MULS.W  $8200,D1
 *        MULS.W  $00008100,D1
+*        MULS.W  #$AB,D1
         
 *JUST REMEMBERED, SHE COULD GIVE IMMEDIATE DATA WITH A '#' OR A '#%' NOT JUST '#$'
 

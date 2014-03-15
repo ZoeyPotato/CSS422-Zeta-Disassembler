@@ -300,6 +300,7 @@ GRAB_NEXT_OP
 		MOVE.L	A0,D7
 		MOVEA.L	PROGEND,A2
         CMP.L	A2,D7  		* Check and see if A0 == end of test address. 
+        BGE     loop_1      * Ask user if they want to do the disassembler again
         CMPI.L	#00,D6		* Check if max line of instructions output on console is reached
         BEQ		CONT_Q		* Asks user if they want to continue with the disassembler
         SUBI.B	#01,D6		* Keep track of how many lines of instruction has been printed
@@ -874,17 +875,12 @@ BUCKET0100_BITS EQU $4
         BTST.L  #$08,D0
         BNE     IS_LEA  *If the zbit was 0 (the 8th bit is 1), branch to IS_LEA
 
-        *Some codes in this bucket can be determined by only bits 11-8, but some need
-        *11-6 to be unambiguous with others. First, solve codes that need bits 11-6...           
+        *JSR/RTS in this bucket can only be determined by only bits 11-6
         AND.W   #$0FC0,D0   *Mask out everything but bits 11-6
         LSR.W   #$06,D0     *Move bits 11-6 into LSB position
         
-        *Check bits 11-6 in the instruction and branch to different op-codes depending 
-        *on what the bits equal, without ambiguity
-        CMP.B   #$33,D0 *Is this a MOVEM(long)?
-        BEQ     IS_MOVEM
-        CMP.B   #$30,D0 *Is this a MULS(long)?
-        BEQ     IS_MULS_L
+        *Check bits 11-6 in the instruction and branch to different either JSR or RTS 
+        *depending on what the bits equal
         CMP.B   #$3A,D0 *Is this a JSR?
         BEQ     IS_JSR
         CMP.B   #$39,D0 *Is this a RTS?
@@ -892,9 +888,11 @@ BUCKET0100_BITS EQU $4
 
         *Now we can use only bits 11-8 and branch to different op-codes only needing these
         *four bits to be unambiguous
-        LSR.W   #$02,D0 *Shift the 7-6 bits out, leaving only 11-8        
-        CMP.B   #$08,D0 *Is this a MOVEM(word)?
-        BEQ     IS_MOVEM
+        LSR.W   #$02,D0 *Shift the 7-6 bits out, leaving only 11-8
+        CMP.B   #$08,D0 *Is this a MOVEM(RegToMem)?
+        BEQ     IS_MOVEM_RegToMem
+        CMP.B   #$0C,D0 *Is this a MOVEM(MemToReg)?
+        BEQ     IS_MOVEM_MemToReg
         CMP.B   #$02,D0 *Is this a CLR?
         BEQ     IS_CLR
         
@@ -904,16 +902,16 @@ BUCKET0100_BITS EQU $4
         JMP     BADOPCODE   *jump to BADOPCODE, where i/o will take care of it.
 
 
-*Now we know this instruction is exactly MOVEM, lets set everything up for EA.
-IS_MOVEM
+*Now we know this instruction is exactly MOVEM(RegToMem), lets set everything up for EA.
+IS_MOVEM_RegToMem
 
-EA_MOVEM
+EA_MOVEM_RegToMem
 
 
-*Now we know this instruction is exactly IS_MULS_L, lets set everything up for EA.
-IS_MULS_L
+*Now we know this instruction is exactly MOVEM(MemToReg), lets set everything up for EA.
+IS_MOVEM_MemToReg
 
-EA_MULS_L
+EA_MOVEM_MemToReg
 
 
 *Now we know this instruction is exactly LEA, lets set everything up for EA.
@@ -955,8 +953,8 @@ IS_LEA
         JMP     EA_LEA       
 
 EA_LEA
-        *Decode the ea bits of LEA. Assuming D2 holds the EA mode, and D3 holds the EA 
-        *register.                                        
+        *Decode the ea bits of LEA. Assuming D1 holds the destination register, D2 holds the
+        *EA mode, and D3 holds the EA register.
         
         *Determine which EA mode and thus Register/Mem Address this instruction used
         MOVEM.L D6,-(SP)    *Push D6 into stack (line counter)
@@ -987,8 +985,63 @@ EA_LEA_WrapperEnd
         
 *Now we know this instruction is exactly CLR, lets set everything up for EA.
 IS_CLR
+        *Verify the size of this operation. If incorrect size (%11), then bad opcode!
+        *Set D1 to the 'size' of the operation located in bits 7 and 6 of the instruction
+        CLR.L   D1
+        MOVE.W  D7,D1       *Move the WHOLE instruction to D1
+        AND.W   #$00C0,D1   *Mask out everything but the size bits
+        LSR.B   #$06,D1     *Shift the size bits into LSB
+        
+        CMP.B   #$03,D1     *Compare the size bits to $3
+        BEQ     BADOPCODE   *if equal, bad op code, size shouldn't be (%11)
+        
+        *Output 'CLR' to console...
+        LEA     CLR,A1      *Loads CLR into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message
+        
+        
+        *Should have a valid CLR op code. Set data up for EA.
+        
+        *Set D2 to the EA mode of the operation located in bits 5-3 of the instruction
+        CLR.L   D2
+        MOVE.W  D7,D2       *Move the WHOLE instruction to D2
+        AND.W   #$0038,D2   *Mask out everything but the EA mode bits
+        LSR.B   #$03,D2     *Shift the EA mode bits into LSB
+                
+        *Set D3 to the EA register of the operation located in bits 2-0 of the instruction
+        CLR.L   D3
+        MOVE.W  D7,D3       *Move the WHOLE instruction to D3
+        AND.W   #$0007,D3   *Mask out everything but the EA register bits
+        
+        JMP     EA_CLR
 
 EA_CLR
+        *Decode the ea bits of CLR. Assuming D1 holds the size, D2 holds the EA mode,
+        *and D3 holds the EA register.
+        
+        *Determine how much data to read in, depending on the size of the operation
+        *output the size of the operation and the immediate data to console
+        JSR     WrapperSize       
+        
+        *Determine which EA mode and thus Register/Mem Address this instruction used
+        CMP.B   #$00,D2
+        BEQ     DataRegMode *If EA mode is a data register, output that
+        
+        CMP.B   #$02,D2
+        BEQ     AddrIndirectMode  *If EA mode is an addr indirect, output that
+        
+        CMP.B   #$03,D2
+        BEQ     AddrIndirectPostMode    *If EA mode is an addr indirect postinc, output that
+        
+        CMP.B   #$04,D2
+        BEQ     AddrIndirectPreMode    *If EA mode is an addr indirect predec, output that
+        
+        CMP.B   #$07,D2
+        BEQ     AddrAbsoluteMode    *If EA mode is an addr absolute word/long, output that
+        
+        *If the ea mode isn't equal to any of these, it is an invalid EA
+        JMP     BADEACODE
 
 
 *Now we know this instruction is exactly JSR, lets set everything up for EA.
@@ -1072,7 +1125,7 @@ BUCKET1110_BITS EQU $E
 *'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
 WrapperSizeImmediate
         CLR.L   D4
-        *Depending on the EA Register, choose which size to decode
+        *Depending on the EA size, choose which size to decode
         CMP.B   #$00,D1
         BEQ     ByteSizeImmediate
         
@@ -1139,6 +1192,52 @@ LongSizeImmediate
         JSR     HEXASCII
         
         JMP     WrapperSizeImmediateEnd        
+
+
+*-----------------------------------------------------------        
+* EA operation size decoding functionality for non-immediate data. Used to figure out
+* and output the size affix for a typical opcode.
+*-----------------------------------------------------------   
+*'Wrapper' func used for all size decoding. Used to do the nasty branching for diff sizes
+WrapperSize
+        CLR.L   D4
+        *Depending on the EA size, choose which size to decode
+        CMP.B   #$00,D1
+        BEQ     ByteSizeOp
+        
+        CMP.B   #$01,D1
+        BEQ     WordSizeOp
+
+        CMP.B   #$02,D1
+        BEQ     LongSizeOp
+        
+*Used to get back to what we were doing, after dealing with the specific size
+WrapperSizeEnd
+        RTS
+        
+ByteSizeOp                
+        *Output '.B' to console...
+        LEA     ByteSize,A1 *Loads ByteSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message                
+                
+        JMP     WrapperSizeEnd
+                
+WordSizeOp
+        *Output '.W' to console...
+        LEA     WordSize,A1 *Loads WordSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message               
+        
+        JMP     WrapperSizeEnd
+                
+LongSizeOp      
+        *Output '.L' to console...
+        LEA     LongSize,A1 *Loads LongSize into address register A1
+        MOVE.B  #14,D0      *Moves the number 14 into data register D0
+        TRAP    #15         *Displays Message                
+        
+        JMP     WrapperSizeEnd        
 
 
 *-----------------------------------------------------------        
